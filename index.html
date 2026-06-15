@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="theme-color" content="#1565C0"/>
+  <title>Cửa Hàng Online</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{background:#F0F4F8;font-family:'Nunito','Segoe UI',sans-serif;overscroll-behavior:none}
+    #root{max-width:430px;margin:0 auto;min-height:100vh}
+    @media(min-width:768px){
+      body{background:#F0F4F8}
+      #root{max-width:100%;min-height:100vh;border-radius:0;box-shadow:none}
+    }
+    ::-webkit-scrollbar{display:none}
+    @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @media print{
+      body>*{visibility:hidden!important}
+      #pdf-target,#pdf-target *{visibility:visible!important}
+      #pdf-target{position:fixed!important;top:0!important;left:0!important;width:100%!important;padding:20px!important;background:white!important}
+    }
+    select option{color:#1E293B}
+    input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+    .copy-btn:active{transform:scale(0.95)}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+/* ── Design tokens ─────────────────────────────────────────── */
+const C = {
+  blue:"#1565C0", blue2:"#1976D2", blueLight:"#E3F2FD", blueDark:"#0D47A1",
+  teal:"#00838F", tealLight:"#E0F7FA",
+  green:"#2E7D32", greenLight:"#E8F5E9",
+  red:"#C62828", redLight:"#FFEBEE",
+  orange:"#E65100", orangeLight:"#FFF3E0",
+  amber:"#F59E0B",
+  bg:"#F0F4F8", card:"#FFFFFF",
+  text:"#1E293B", textSec:"#64748B", textMuted:"#94A3B8",
+  border:"#E2E8F0", divider:"#F1F5F9",
+  shadow:"0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04)",
+  shadowMd:"0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.05)",
+  shadowLg:"0 10px 25px rgba(0,0,0,0.12),0 4px 10px rgba(0,0,0,0.07)",
+};
+const font = "'Nunito','Segoe UI',sans-serif";
+
+/* ── Helpers ───────────────────────────────────────────────── */
+const ls     = (k,def)=>{try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):def;}catch{return def;}};
+const lsSet  = (k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
+const fmt     = (n) => n ? Number(n).toLocaleString("vi-VN") : "0";
+const fmtK = (n) => fmt(n);
+const nowISO  = () => new Date().toISOString();
+const genId   = (p) => `${p}${Date.now().toString().slice(-7)}`;
+
+/* ── LUNAR DATE UTIL ────────────────────────────────────────── */
+function toLunar(date){
+  // Simple Gregorian to Lunar Vietnamese (approximate)
+  const lunarInfo=[0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5d0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06aa0,0x0a6b6,0x056a0,0x02b60,0x09177,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0];
+  function leapMonth(y){return lunarInfo[y-1900]&0xf;}
+  function leapDays(y){return leapMonth(y)?((lunarInfo[y-1900]&0x10000)?30:29):0;}
+  function monthDays(y,m){return (lunarInfo[y-1900]&(0x10000>>m))?30:29;}
+  function yearDays(y){let s=348;for(let i=0x8000;i>0x8;i>>=1){if(lunarInfo[y-1900]&i) s+=1;}return s+leapDays(y);}
+  const y=date.getFullYear(),m=date.getMonth()+1,d=date.getDate();
+  const offset=(Date.UTC(y,m-1,d)-Date.UTC(1900,0,31))/86400000;
+  let i,temp=0,leap=0,month,day,year=1900;
+  for(i=1900;i<2100&&temp<offset;i++){temp+=yearDays(i);if(temp<offset) year=i;}
+  if(temp>=offset) temp-=yearDays(--year);
+  const daysOff=offset-temp;
+  const leapM=leapMonth(year);
+  let lm=false;
+  for(i=1;i<=12&&daysOff>0;i++){
+    if(leapM>0&&i===(leapM+1)&&!lm){--i;lm=true;temp=leapDays(year);}
+    else temp=monthDays(year,i);
+    if(lm&&i===(leapM+1)) lm=false;
+    temp-=1; // subtract to correctly accumulate
+  }
+  month=i-1; day=daysOff-(offset-daysOff)+1; // simplified
+  // Use simpler approach
+  return {y:year,m:month,d:day};
+}
+function getLunarDate(){
+  const now=new Date();
+  // Approximate: offset by known reference
+  // 2026-06-10 = approx 15/4 AL - just show formatted date
+  const ref=new Date(2026,4,26); // 2026-05-26 = 1/4 AL (approx)
+  const diff=Math.floor((now-ref)/86400000);
+  const lunarMonths=[29,30,29,30,29,30,29,30,29,30,29,30];
+  let m=4,d=1+diff;
+  while(d>lunarMonths[m-4%12]){d-=lunarMonths[m-4%12];m++;}
+  return `${d}/${m} ÂL`;
+}
+const fmtDate = (iso) => { if(!iso) return ""; const d=new Date(iso); return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+const sameDay = (iso) => new Date(iso).toDateString()===new Date().toDateString();
+
+/* ── Mock Data ─────────────────────────────────────────────── */
+const SELLER = {id:"U000",username:"seller",password:"seller123",ten:"Cửa Hàng Minh Hương",loai:"seller",sdt:"0909000000",diaChi:"123 Đường ABC, Quận 1"};
+
+/* ── Dọn dẹp localStorage cũ (dữ liệu mẫu) ─────────────────── */
+['local_customers','local_products','local_orders','local_debts'].forEach(k=>localStorage.removeItem(k));
+
+/* ── API ───────────────────────────────────────────────────── */
+const createApi = (url) => ({
+  async get(action,params={}){
+    try{const r=await fetch(`${url}?action=${action}&${new URLSearchParams(params)}`);return r.json();}
+    catch(e){return{error:e.message};}
+  },
+  async post(action,body={}){
+    try{
+      const r=await fetch(url,{
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({action,...body}),
+        redirect:"follow"
+      });
+      const text=await r.text();
+      try{return JSON.parse(text);}catch{return{ok:true};}
+    }catch(e){return{error:e.message};}
+  }
+});
+// Helper ghi công nợ — luôn hiện lỗi nếu thất bại
+const postDebt = async (api, debt, notify) => {
+  if(!api) return; // chế độ local, không cần gọi API
+  const res = await api.post("addDebt", debt);
+  if(res?.error){
+    console.error("[addDebt] lỗi:", res.error, debt);
+    if(notify) notify(`⚠️ Lỗi lưu công nợ: ${res.error}`);
+  }
+};
+
+/* ── Apps Script code constant ─────────────────────────────── */
+const APPS_SCRIPT_CODE = `// ============================================================
+// QUẢN LÝ CỬA HÀNG ONLINE — Google Apps Script v2
+// Paste vào Extensions → Apps Script → Lưu → Deploy
+// ============================================================
+
+function initializeSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const config = [
+    ['TaiKhoan',   ['id','username','password','ten','loai','sdt','diaChi','avatar']],
+    ['SanPham',    ['id','ten','gia','von','nhom']],
+    ['DonHang',    ['id','maKH','tenKH','ngay','trangThai','tongTien','tongVon']],
+    ['ChiTietDon', ['maDon','maSP','ten','sl','gia','von','nhom']],  // nhom ở cột 7
+    ['CongNo',     ['id','maKH','tenKH','soTien','loai','ngay','maDon']],
+  ];
+  config.forEach(([name, cols]) => {
+    let sh = ss.getSheetByName(name) || ss.insertSheet(name);
+    if (sh.getLastRow() === 0) {
+      const hdr = sh.getRange(1,1,1,cols.length);
+      hdr.setValues([cols]);
+      hdr.setFontWeight('bold');
+      hdr.setBackground('#1565C0');
+      hdr.setFontColor('white');
+      sh.setFrozenRows(1);
+    }
+  });
+  const us = ss.getSheetByName('TaiKhoan');
+  if (us.getLastRow() <= 1)
+    us.appendRow(['U000','seller','seller123','Cửa Hàng','seller','','']);
+  SpreadsheetApp.getUi().alert('✅ Tạo xong! Tiếp theo: Deploy → New deployment → Web App → Anyone.');
+}
+
+// ── READ ────────────────────────────────────────────────────
+/* ── TỰ ĐỘNG TẠO SHEET NẾU CHƯA CÓ ─────────────────────────── */
+function initSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const schema = {
+    'TaiKhoan':   ['id','username','password','ten','loai','sdt','diaChi','avatar'],
+    'SanPham':    ['id','ten','gia','von','nhom','nhan'],
+    'DonHang':    ['id','maKH','tenKH','ngay','trangThai','tongTien','tongVon'],
+    'ChiTietDon': ['maDon','maSP','ten','sl','gia','von','nhom','ghiChu'],
+    'CongNo':     ['id','maKH','tenKH','soTien','loai','ngay','ghiChu','maDon']
+  };
+  Object.entries(schema).forEach(([name, headers]) => {
+    let sh = ss.getSheetByName(name);
+    if (!sh) {
+      sh = ss.insertSheet(name);
+      sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+      sh.getRange(1, 1, 1, headers.length)
+        .setBackground('#1565C0').setFontColor('#ffffff').setFontWeight('bold');
+      sh.setFrozenRows(1);
+    }
+  });
+}
+
+function doGet(e) {
+  initSheets();
+  const ss  = SpreadsheetApp.getActiveSpreadsheet();
+  const act = e.parameter.action;
+  let result = {};
+
+  if (act === 'getTaiKhoan') {
+    result.data = sheet2arr(ss,'TaiKhoan').map(r => ({
+      id:String(r[0]),username:String(r[1]),password:String(r[2]),ten:String(r[3]),loai:String(r[4]),sdt:r[5]?String(r[5]):'',diaChi:r[6]?String(r[6]):'',avatar:r[7]?String(r[7]):''
+    }));
+  }
+  else if (act === 'getSanPham') {
+    result.data = sheet2arr(ss,'SanPham').map(r => ({
+      id:r[0],ten:r[1],gia:+r[2]||0,von:+r[3]||0,nhom:r[4]||'Khác',nhan:r[5]||''
+    }));
+  }
+  else if (act === 'getDonHang') {
+    const orders = sheet2arr(ss,'DonHang').map(r => ({
+      id:r[0],maKH:r[1],tenKH:r[2],ngay:new Date(r[3]).toISOString(),
+      trangThai:r[4],tongTien:+r[5]||0,tongVon:+r[6]||0,items:[]
+    }));
+    const details = sheet2arr(ss,'ChiTietDon');
+    orders.forEach(o => {
+      o.items = details.filter(d=>d[0]===o.id).map(d=>({
+        maSP:d[1],ten:d[2],sl:+d[3]||0,gia:+d[4]||0,von:+d[5]||0,nhom:d[6]||''
+      }));
+    });
+    result.data = orders;
+  }
+  else if (act === 'getCongNo') {
+    result.data = sheet2arr(ss,'CongNo').map(r => ({
+      id:r[0],maKH:r[1],tenKH:r[2],soTien:+r[3]||0,loai:r[4],
+      ngay:new Date(r[5]).toISOString(),ghiChu:r[6]||'',maDon:r[7]||''
+    }));
+  }
+
+  return json(result);
+}
+
+// ── WRITE ───────────────────────────────────────────────────
+function doPost(e) {
+  initSheets();
+  const ss   = SpreadsheetApp.getActiveSpreadsheet();
+  const body = JSON.parse(e.postData.contents);
+  const act  = body.action;
+  const res  = {ok:false};
+
+  try {
+    // ── CREATE ORDER ─────────────────────────────────────
+    if (act === 'createOrder') {
+      ss.getSheetByName('DonHang').appendRow([
+        body.id, body.maKH, body.tenKH, body.ngay,
+        body.trangThai, Number(body.tongTien)||0, Number(body.tongVon)||0
+      ]);
+      (body.items||[]).forEach(it =>
+        ss.getSheetByName('ChiTietDon').appendRow([
+          body.id, String(it.maSP||''), String(it.ten||''),
+          Number(it.sl)||0, Number(it.gia)||0, Number(it.von)||0,
+          String(it.nhom||''), String(it.ghiChu||'')
+        ])
+      );
+      res.ok = true;
+
+    // ── UPDATE ORDER (sửa đơn — xoá cũ, thêm lại cùng ID) ───
+    } else if (act === 'updateOrder') {
+      const oh = ss.getSheetByName('DonHang');
+      const cd = ss.getSheetByName('ChiTietDon');
+      const cn = ss.getSheetByName('CongNo');
+
+      // 1. Xoá DonHang cũ
+      const hr = oh.getDataRange().getValues();
+      for (let i = hr.length - 1; i >= 1; i--) {
+        if (String(hr[i][0]) === String(body.id)) { oh.deleteRow(i+1); break; }
+      }
+      // 2. Xoá ChiTietDon cũ
+      const cr = cd.getDataRange().getValues();
+      for (let i = cr.length - 1; i >= 1; i--) {
+        if (String(cr[i][0]) === String(body.id)) cd.deleteRow(i+1);
+      }
+      // 3. Ghi DonHang mới
+      oh.appendRow([
+        body.id, body.maKH, body.tenKH, body.ngay,
+        body.trangThai, Number(body.tongTien)||0, Number(body.tongVon)||0
+      ]);
+      // 4. Ghi ChiTietDon mới
+      (body.items||[]).forEach(it =>
+        cd.appendRow([
+          body.id, String(it.maSP||''), String(it.ten||''),
+          Number(it.sl)||0, Number(it.gia)||0, Number(it.von)||0,
+          String(it.nhom||''), String(it.ghiChu||'')
+        ])
+      );
+      // 5. UPDATE CongNo SET soTien WHERE maDon (cột H) = orderId
+      if (cn && body.maKH && body.maKH !== 'le') {
+        const orderId = String(body.id).trim();
+        const cnData = cn.getDataRange().getValues();
+        let foundRow = -1;
+        for (let i = 1; i < cnData.length; i++) {
+          if (String(cnData[i][7]||'').trim() === orderId) { foundRow = i; break; }
+        }
+        if (foundRow >= 0) {
+          cn.getRange(foundRow + 1, 4).setValue(Number(body.tongTien)||0);
+          cn.getRange(foundRow + 1, 7).setValue('Sua don ' + orderId);
+        } else if (body.trangThai === 'done') {
+          cn.appendRow([
+            body.newDebtId||('CN'+Date.now()),
+            body.maKH, body.tenKH,
+            Number(body.tongTien)||0, 'no',
+            new Date().toISOString(), orderId, orderId
+          ]);
+        }
+      }
+      res.ok = true;
+
+        } else if (act === 'approveOrder') {
+      const sh = ss.getSheetByName('DonHang');
+      const rows = sh.getDataRange().getValues();
+      let orderRow = null;
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === String(body.id)) {
+          sh.getRange(i+1, 5).setValue('done');
+          orderRow = rows[i]; break;
+        }
+      }
+      // Tạo CongNo khi duyệt đơn (maDon = body.id)
+      if (body.maKH && body.maKH !== 'le') {
+        const cn = ss.getSheetByName('CongNo');
+        if (cn) cn.appendRow([
+          body.debtId || ('CN'+Date.now()),
+          body.maKH, body.tenKH||'',
+          Number(body.tongTien)||Number(orderRow&&orderRow[5])||0,
+          'no', new Date().toISOString(),
+          'Duyệt ' + body.id, body.id
+        ]);
+      }
+      res.ok = true;
+
+    // ── ADD DEBT (ghi nợ / thu tiền) ─────────────────────
+    } else if (act === 'addDebt') {
+      // ghiChu đã có mã đơn ("BH123" hoặc "Bán BH123") → lấy từ cuối làm maDon
+      const ghiChuParts = String(body.ghiChu||'').trim().split(/\s+/);
+      const maDon = ghiChuParts[ghiChuParts.length - 1] || '';
+      ss.getSheetByName('CongNo').appendRow([
+        body.id,                // A: id
+        body.maKH,              // B: maKH
+        body.tenKH,             // C: tenKH
+        Number(body.soTien)||0, // D: soTien
+        body.loai,              // E: loai
+        body.ngay,              // F: ngay
+        body.ghiChu||'',        // G: ghiChu (giữ nguyên)
+        maDon                   // H: maDon = last word của ghiChu
+      ]);
+      res.ok = true;
+
+        } else if (act === 'approveOrder') {
+      const sh = ss.getSheetByName('DonHang');
+      const rows = sh.getDataRange().getValues();
+      let orderRow = null;
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === String(body.id)) {
+          sh.getRange(i+1, 5).setValue('done');
+          orderRow = rows[i]; break;
+        }
+      }
+      // Tạo CongNo khi duyệt đơn (maDon = body.id)
+      if (body.maKH && body.maKH !== 'le') {
+        const cn = ss.getSheetByName('CongNo');
+        if (cn) cn.appendRow([
+          body.debtId || ('CN'+Date.now()),
+          body.maKH, body.tenKH||'',
+          Number(body.tongTien)||Number(orderRow&&orderRow[5])||0,
+          'no', new Date().toISOString(),
+          'Duyệt ' + body.id, body.id
+        ]);
+      }
+      res.ok = true;
+
+    // ── ADD DEBT (ghi nợ / thu tiền) ─────────────────────
+    } else if (act === 'addDebt') {
+      // maDon: dùng giá trị được gửi, hoặc tự trích từ ghiChu ("Bán BH123" → "BH123")
+      const maDon = body.maDon ||
+        (body.ghiChu ? body.ghiChu.trim().split(/\s+/).pop() : '');
+      ss.getSheetByName('CongNo').appendRow([
+        body.id, body.maKH, body.tenKH,
+        Number(body.soTien)||0, body.loai, body.ngay, body.ghiChu||'', maDon
+      ]);
+      res.ok = true;
+
+    // ── ADD CUSTOMER ──────────────────────────────────────
+    } else if (act === 'addCustomer') {
+      ss.getSheetByName('TaiKhoan').appendRow([
+        body.id, body.username, body.password,
+        body.ten, body.loai, body.sdt||'', body.diaChi||'', body.avatar||''
+      ]);
+      res.ok = true;
+
+    // ── UPDATE USER (profile / avatar) ───────────────────
+    } else if (act === 'updateUser') {
+      const sh = ss.getSheetByName('TaiKhoan');
+      const rows = sh.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === String(body.id)) {
+          if (body.ten)    sh.getRange(i+1, 4).setValue(body.ten);
+          if (body.sdt)    sh.getRange(i+1, 6).setValue(body.sdt);
+          if (body.avatar !== undefined) sh.getRange(i+1, 8).setValue(body.avatar||'');
+          break;
+        }
+      }
+      res.ok = true;
+
+    } else {
+      res.error = 'Unknown action: ' + act;
+    }
+
+  } catch(err) {
+    res.error = err.message;
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(res))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  const ss  = SpreadsheetApp.getActiveSpreadsheet();
+  const act = e.parameter.action;
+  let result = {};
+
+  if (act === 'getTaiKhoan') {
+    result.data = sheet2arr(ss,'TaiKhoan').map(r => ({
+      id:String(r[0]),username:String(r[1]),password:String(r[2]),ten:String(r[3]),loai:String(r[4]),sdt:r[5]?String(r[5]):'',diaChi:r[6]?String(r[6]):'',avatar:r[7]?String(r[7]):''
+    }));
+  }
+  else if (act === 'getSanPham') {
+    result.data = sheet2arr(ss,'SanPham').map(r => ({
+      id:r[0],ten:r[1],gia:+r[2]||0,von:+r[3]||0,nhom:r[4]||'Khác',nhan:r[5]||''
+    }));
+  }
+  else if (act === 'getDonHang') {
+    const orders = sheet2arr(ss,'DonHang').map(r => ({
+      id:r[0],maKH:r[1],tenKH:r[2],ngay:new Date(r[3]).toISOString(),
+      trangThai:r[4],tongTien:+r[5]||0,tongVon:+r[6]||0,items:[]
+    }));
+    const details = sheet2arr(ss,'ChiTietDon');
+    orders.forEach(o => {
+      o.items = details.filter(d=>d[0]===o.id).map(d=>({
+        maSP:d[1],ten:d[2],sl:+d[3]||0,gia:+d[4]||0,von:+d[5]||0,nhom:d[6]||''
+      }));
+    });
+    result.data = orders;
+  }
+  else if (act === 'getCongNo') {
+    result.data = sheet2arr(ss,'CongNo').map(r => ({
+      id:r[0],maKH:r[1],tenKH:r[2],soTien:+r[3]||0,loai:r[4],
+      ngay:new Date(r[5]).toISOString(),ghiChu:r[6]||'',maDon:r[7]||''
+    }));
+  }
+
+  return json(result);
+}
+
+// ── WRITE ───────────────────────────────────────────────────
+function doPost(e) {
+  try {
+  const ss   = SpreadsheetApp.getActiveSpreadsheet();
+  const body = JSON.parse(e.postData.contents);
+  const act  = body.action;
+
+  if (act === 'createOrder') {
+    ss.getSheetByName('DonHang').appendRow([
+      body.id,body.maKH,body.tenKH,body.ngay,body.trangThai,body.tongTien,body.tongVon
+    ]);
+    body.items.forEach(it =>
+      ss.getSheetByName('ChiTietDon').appendRow([
+        body.id, String(it.maSP||''), String(it.ten||''), Number(it.sl)||0,
+        Number(it.gia)||0, Number(it.von)||0, String(it.nhom||''), String(it.ghiChu||'')
+      ])
+    );
+  }
+  else if (act === 'approveOrder') {
+    const sh = ss.getSheetByName('DonHang');
+    findAndUpdate(sh, body.id, 5, 'done');
+  }
+  else if (act === 'addDebt') {
+    const sh = ss.getSheetByName('CongNo');
+    if(!sh) throw new Error('Sheet CongNo không tồn tại. Hãy chạy initializeSheets()');
+    sh.appendRow([
+      body.id, body.maKH, body.tenKH,
+      Number(body.soTien)||0,
+      body.loai, body.ngay, body.maDon||''
+    ]);
+  }
+  else if (act === 'updateOrder') {
+    // Cập nhật đơn cũ: xóa dòng cũ + append lại (cùng ID)
+    const oh=ss.getSheetByName('DonHang'); const cd=ss.getSheetByName('ChiTietDon');
+    const hr=oh.getDataRange().getValues();
+    for(let i=hr.length-1;i>=1;i--){if(String(hr[i][0])===String(body.id)){oh.deleteRow(i+1);break;}}
+    const cr=cd.getDataRange().getValues();
+    for(let i=cr.length-1;i>=1;i--){if(String(cr[i][0])===String(body.id)) cd.deleteRow(i+1);}
+    oh.appendRow([body.id,body.maKH,body.tenKH,body.ngay,body.trangThai,Number(body.tongTien)||0,Number(body.tongVon)||0]);
+    (body.items||[]).forEach(it=>cd.appendRow([body.id,it.maSP,it.ten,it.sl,it.gia,it.von||0,it.nhom||'',it.ghiChu||'']));
+    result.ok=true;
+  }
+  else if (act === 'cancelOrder') {
+    // Xóa khỏi DonHang
+    const oh = ss.getSheetByName('DonHang');
+    const hr = oh.getDataRange().getValues();
+    for(let i=hr.length-1;i>=1;i--){ if(String(hr[i][0])===String(body.id)){ oh.deleteRow(i+1); break; } }
+    // Xóa khỏi ChiTietDon
+    const cd = ss.getSheetByName('ChiTietDon');
+    const cr = cd.getDataRange().getValues();
+    for(let i=cr.length-1;i>=1;i--){ if(String(cr[i][0])===String(body.id)) cd.deleteRow(i+1); }
+    // Đảo ngược công nợ nếu đơn đã giao
+    if(body.reversDebt && body.maKH && body.maKH!=='le'){
+      ss.getSheetByName('CongNo').appendRow([
+        body.debtId||('CN'+Date.now()), body.maKH, body.tenKH,
+        Number(body.tongTien)||0, 'thu', new Date().toISOString(), 'Huỷ đơn '+body.id
+      ]);
+    }
+    result.ok=true;
+  }
+  else if (act === 'addCustomer') {
+    ss.getSheetByName('TaiKhoan').appendRow([
+      body.id,body.username,body.password,body.ten,body.loai,body.sdt||'',body.diaChi||'',body.avatar||''
+    ]);
+  }
+  else if (act === 'addProduct') {
+    ss.getSheetByName('SanPham').appendRow([
+      body.id,body.ten,body.gia,body.von,body.nhom||''
+    ]);
+  }
+  else if (act === 'updateUser') {
+    const sh = ss.getSheetByName('TaiKhoan');
+    const rows = sh.getDataRange().getValues();
+    for(let i=1;i<rows.length;i++){
+      if(rows[i][0]===body.id){
+        if(body.ten!==undefined) sh.getRange(i+1,4).setValue(body.ten||rows[i][3]);
+        if(body.sdt!==undefined) sh.getRange(i+1,6).setValue(body.sdt||rows[i][5]);
+        if(body.avatar!==undefined) sh.getRange(i+1,8).setValue(body.avatar||'');
+        break;
+      }
+    }
+  }
+
+  return json({ok:true});
+  } catch(err) {
+    return json({error: err.toString(), stack: err.stack});
+  }
+}
+
+// ── Utils ────────────────────────────────────────────────────
+/* ── CHẠY 1 LẦN ĐỂ KHỞI TẠO SHEET (nếu cần) ──────────────── */
+function setup() {
+  initSheets();
+  SpreadsheetApp.getUi().alert('✅ Đã tạo đầy đủ các sheet!');
+}
+
+function sheet2arr(ss, name) {
+  const sh = ss.getSheetByName(name);
+  if (!sh || sh.getLastRow() <= 1) return [];
+  return sh.getRange(2,1,sh.getLastRow()-1,sh.getLastColumn()).getValues()
+    .filter(r => r[0] !== '' && r[0] !== null);
+}
+
+function findAndUpdate(sh, id, col, value) {
+  const rows = sh.getDataRange().getValues();
+  for (let i=1; i<rows.length; i++) {
+    if (String(rows[i][0])===String(id)) {
+      sh.getRange(i+1, col).setValue(value);
+      break;
+    }
+  }
+}
+
+function json(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ===== CẤU TRÚC SHEETS =====
+TaiKhoan:   id | username | password | ten | loai | sdt | diaChi
+SanPham:    id | ten | gia | von | nhom
+DonHang:    id | maKH | tenKH | ngay | trangThai | tongTien | tongVon
+ChiTietDon: maDon | maSP | ten | sl | gia | von | nhom   ← cột 7 mới
+CongNo:     id | maKH | tenKH | soTien | loai | ngay | maDon
+*/`;
+
+/* ── UI Primitives ──────────────────────────────────────────── */
+function Toast({msg}){if(!msg)return null;return <div style={{position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",background:"rgba(30,41,59,0.93)",backdropFilter:"blur(8px)",color:"white",padding:"10px 20px",borderRadius:24,fontSize:13,fontWeight:700,zIndex:1000,whiteSpace:"nowrap",boxShadow:C.shadowLg,fontFamily:font,animation:"fadeUp 0.2s ease"}}>{msg}</div>;}
+function Badge({label,color=C.blue,bg=C.blueLight,size=11}){return <span style={{background:bg,color,padding:"2px 10px",borderRadius:20,fontSize:size,fontWeight:700,fontFamily:font,whiteSpace:"nowrap"}}>{label}</span>;}
+function Btn({children,onClick,color=C.blue,outline=false,full=false,sm=false,disabled=false,style:st={}}){return <button onClick={onClick} disabled={disabled} style={{background:outline?"transparent":disabled?"#CBD5E1":color,color:outline?color:"white",border:`2px solid ${disabled?"#CBD5E1":color}`,borderRadius:12,padding:sm?"7px 14px":"11px 18px",fontWeight:700,fontSize:sm?12:14,cursor:disabled?"not-allowed":"pointer",width:full?"100%":"auto",opacity:disabled?0.7:1,fontFamily:font,transition:"all 0.15s",lineHeight:1.3,...st}}>{children}</button>;}
+function Card({children,style:st={},onClick}){return <div onClick={onClick} style={{background:C.card,borderRadius:16,padding:16,boxShadow:C.shadow,border:`1px solid ${C.border}`,cursor:onClick?"pointer":"default",transition:"all 0.15s",fontFamily:font,...st}}>{children}</div>;}
+function Inp({value,onChange,placeholder,type="text",style:st={},pfx,onKeyDown}){
+  return(<div style={{position:"relative",display:"flex",alignItems:"center"}}>
+    {pfx&&<span style={{position:"absolute",left:12,color:C.textMuted,fontSize:15,pointerEvents:"none"}}>{pfx}</span>}
+    <input value={value} onChange={e=>onChange(e.target.value)} onKeyDown={onKeyDown} type={type} placeholder={placeholder} style={{width:"100%",padding:"10px 14px",paddingLeft:pfx?38:14,border:`1.5px solid ${C.border}`,borderRadius:10,fontSize:14,outline:"none",background:"white",color:C.text,fontFamily:font,boxSizing:"border-box",...st}}/>
+  </div>);}
+function MoneyInput({value,onChange,placeholder,style:st={}}){
+  const display=value?Number(value).toLocaleString("vi-VN"):"";
+  return(<div style={{position:"relative",display:"flex",alignItems:"center"}}>
+    <span style={{position:"absolute",left:12,color:C.textMuted,fontSize:14,pointerEvents:"none",fontWeight:600}}>₫</span>
+    <input value={display} onChange={e=>onChange(e.target.value.replace(/[^\d]/g,""))} placeholder={placeholder||"0"} inputMode="numeric" style={{width:"100%",padding:"10px 14px 10px 30px",border:`1.5px solid ${C.border}`,borderRadius:10,fontSize:14,outline:"none",background:"white",color:C.text,fontFamily:font,boxSizing:"border-box",fontWeight:700,...st}}/>
+  </div>);}
+function Modal({onClose,children,fullBottom=false}){
+  if(fullBottom)return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={onClose}><div style={{background:C.card,width:"100%",maxWidth:430,margin:"0 auto",borderRadius:"20px 20px 0 0",padding:20,maxHeight:"90vh",overflowY:"auto",animation:"slideUp 0.25s ease"}} onClick={e=>e.stopPropagation()}>{children}</div></div>);
+  return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.2s ease"}} onClick={onClose}><div style={{background:C.card,width:"100%",maxWidth:400,borderRadius:20,padding:20,maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>{children}</div></div>);}
+function ModalHeader({title,onClose}){return(<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontWeight:800,fontSize:17,color:C.text}}>{title}</div><button onClick={onClose} style={{background:C.divider,border:"none",borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:14,fontWeight:700,color:C.textSec,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button></div>);}
+function Pills({options,value,onChange,teal=false}){return(<div style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none"}}>{options.map(o=><button key={o} onClick={()=>onChange(o)} style={{flexShrink:0,padding:"5px 14px",borderRadius:20,border:"none",cursor:"pointer",background:value===o?(teal?C.teal:C.blue):C.divider,color:value===o?"white":C.textSec,fontWeight:value===o?700:500,fontSize:12,fontFamily:font,transition:"all 0.15s"}}>{o}</button>)}</div>);}
+
+/* ── AVATAR ──────────────────────────────────────────────── */
+const AVATAR_COLORS=['#3B82F6','#10B981','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#F97316','#EF4444','#14B8A6','#84CC16'];
+const EMOJI_AVATARS=['🐱','🐶','🦊','🐻','🐼','🐨','🐯','🦁','🐸','🐵','🦋','🌸','🌺','🌻','🌹','🍀','⭐','🌙','☀️','🎈','💎','👑','🎀','🌈','🏄','🎸','🍕','🎯','🚀','💫'];
+
+function getAvatarColor(id=''){
+  let h=0; for(let ch of String(id)) h=(h*31+ch.charCodeAt(0))%AVATAR_COLORS.length;
+  return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length];
+}
+function getInitials(ten=''){
+  return (ten||'?').split(' ').filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase()||'?';
+}
+
+function Avatar({user={},size=36,style:st={},onClick}){
+  const av = user.avatar || avatarCache.get(user.id||'') || '';
+  const isPhoto = av && av.startsWith('data:');
+  const isEmoji = av && !isPhoto;
+  const bg = getAvatarColor(user.id||user.ten||'');
+
+  if(isPhoto) return(
+    <div onClick={onClick} style={{width:size,height:size,borderRadius:'50%',overflow:'hidden',
+      flexShrink:0,cursor:onClick?'pointer':'default',boxShadow:'0 1px 4px rgba(0,0,0,0.15)',...st}}>
+      <img src={av} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>
+    </div>
+  );
+  return(
+    <div onClick={onClick} style={{width:size,height:size,borderRadius:'50%',flexShrink:0,
+      display:'flex',alignItems:'center',justifyContent:'center',
+      background:isEmoji?'#EEF2FF':bg,
+      fontSize:isEmoji?size*0.56:size*0.38,fontWeight:800,color:'white',
+      letterSpacing:-0.5,cursor:onClick?'pointer':'default',
+      boxShadow:'0 1px 4px rgba(0,0,0,0.15)',userSelect:'none',...st}}>
+      {isEmoji?av:getInitials(user.ten)}
+    </div>
+  );
+}
+
+// Resize image to square, return base64 JPEG
+function resizeImage(file, size=120){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        canvas.width=size; canvas.height=size;
+        const ctx=canvas.getContext('2d');
+        const min=Math.min(img.width,img.height);
+        const sx=(img.width-min)/2, sy=(img.height-min)/2;
+        ctx.drawImage(img,sx,sy,min,min,0,0,size,size);
+        resolve(canvas.toDataURL('image/jpeg',0.75));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function AvatarPicker({current,onSelect,onClose}){
+  const [uploading,setUploading]=useState(false);
+  const fileRef=useRef(null);
+
+  const handleFile=async(e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    setUploading(true);
+    try{ const b64=await resizeImage(file,120); onSelect(b64); }
+    catch(err){ console.error(err); }
+    setUploading(false);
+  };
+
+  return(
+    <Modal onClose={onClose}>
+      <ModalHeader title="🎨 Chọn avatar" onClose={onClose}/>
+      {/* Upload ảnh từ máy */}
+      <input ref={fileRef} type="file" accept="image/*" onChange={handleFile}
+        style={{display:'none'}}/>
+      <button onClick={()=>fileRef.current?.click()}
+        style={{width:'100%',padding:'12px',borderRadius:12,border:`2px dashed ${C.blue}`,
+          background:C.blueLight,color:C.blue,fontWeight:700,fontSize:14,cursor:'pointer',
+          fontFamily:font,display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:14}}>
+        {uploading?'⏳ Đang xử lý...':'📷 Chọn ảnh từ máy'}
+      </button>
+      {/* Emoji grid */}
+      <div style={{fontSize:12,color:C.textMuted,fontWeight:600,marginBottom:8}}>Hoặc chọn emoji:</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:6,marginBottom:14}}>
+        {EMOJI_AVATARS.map(e=>(
+          <button key={e} onClick={()=>onSelect(e)}
+            style={{fontSize:26,background:current===e?C.blueLight:'transparent',
+              border:`2px solid ${current===e?C.blue:'transparent'}`,
+              borderRadius:10,padding:'5px 0',cursor:'pointer',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              transform:current===e?'scale(1.15)':'scale(1)',transition:'all 0.15s'}}>
+            {e}
+          </button>
+        ))}
+      </div>
+      <Btn onClick={()=>onSelect('')} outline color={C.textSec} full>🔄 Dùng chữ cái tên</Btn>
+    </Modal>
+  );
+}
+
+/* ── GSGuide ─────────────────────────────────────────────────── */
+function GSGuide({onClose}){
+  const [copied,setCopied]=useState(false);const [step,setStep]=useState(1);
+  const copyCode=()=>{navigator.clipboard?.writeText(APPS_SCRIPT_CODE).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2500);});};
+  const steps=[
+    {n:1,title:"Tạo Google Sheet",icon:"📊",content:<div><p style={{fontSize:13,color:C.textSec,marginBottom:12,lineHeight:1.7}}>Tạo Google Sheet mới → mở <b>Extensions → Apps Script</b></p><a href="https://sheets.new" target="_blank" style={{display:"flex",alignItems:"center",gap:8,background:C.greenLight,color:C.green,padding:"10px 14px",borderRadius:10,textDecoration:"none",fontWeight:700,fontSize:13}}>📊 Tạo Google Sheet mới →</a></div>},
+    {n:2,title:"Dán code Apps Script",icon:"📋",content:<div><p style={{fontSize:13,color:C.textSec,marginBottom:10,lineHeight:1.7}}>Xoá code cũ, dán toàn bộ code bên dưới, bấm <b>Ctrl+S</b>.</p><div style={{position:"relative"}}><pre style={{background:"#1E293B",color:"#94A3B8",padding:"12px 14px",borderRadius:10,fontSize:11,lineHeight:1.6,overflowX:"auto",maxHeight:180,overflowY:"auto",fontFamily:"monospace",whiteSpace:"pre-wrap"}}>{APPS_SCRIPT_CODE.slice(0,400)}...</pre><button onClick={copyCode} style={{position:"absolute",top:8,right:8,background:copied?C.green:C.blue,color:"white",border:"none",borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font}}>{copied?"✅ Đã copy!":"📋 Copy"}</button></div></div>},
+    {n:3,title:"Chạy initializeSheets()",icon:"▶️",content:<div><p style={{fontSize:13,color:C.textSec,marginBottom:10,lineHeight:1.7}}>Chọn hàm <code style={{background:C.divider,padding:"1px 6px",borderRadius:4}}>initializeSheets</code> → bấm <b>▶ Run</b>. Hàm tự tạo 5 sheets.</p><div style={{background:C.blueLight,borderRadius:10,padding:"10px 12px",marginBottom:10}}>{[["TaiKhoan","Tài khoản (có cột avatar)"],["SanPham","Sản phẩm"],["DonHang","Đơn hàng"],["ChiTietDon","Chi tiết đơn"],["CongNo","Công nợ"]].map(([s,l])=><div key={s} style={{fontSize:12,color:C.textSec,padding:"3px 0"}}>• <b style={{color:C.text}}>{s}</b> — {l}</div>)}</div><div style={{background:C.orangeLight,borderRadius:10,padding:"10px 12px",fontSize:12,color:C.orange,fontWeight:600}}><b>Đã có sheet cũ?</b> Mở sheet <b>TaiKhoan</b> → chọn cột H → chuột phải → Insert 1 column left → nhập "avatar" vào ô H1. Sau đó chạy lại code mới.</div></div>},
+    {n:4,title:"Deploy Web App",icon:"🚀",content:<div><p style={{fontSize:13,color:C.textSec,marginBottom:10,lineHeight:1.7}}>Bấm <b>Deploy → New deployment → Web App</b>:</p>{[["Execute as","Me"],["Who has access","Anyone"]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:C.divider,borderRadius:8,marginBottom:6,fontSize:13}}><span style={{color:C.textSec}}>{l}</span><span style={{fontWeight:700,color:C.text}}>{v}</span></div>)}</div>},
+    {n:5,title:"Nhập URL vào app",icon:"🔗",content:<div><p style={{fontSize:13,color:C.textSec,marginBottom:10,lineHeight:1.7}}>Copy <b>Web App URL</b> → dán vào <b>⚙️ Cấu hình</b> ở màn đăng nhập hoặc Tab Hồ Sơ.</p><div style={{background:C.orangeLight,borderRadius:10,padding:"10px 12px",fontSize:12,color:C.orange,fontWeight:600,marginBottom:8}}>⚠️ Lần đầu cần cấp Authorization → chọn "Allow"</div><div style={{background:C.greenLight,borderRadius:10,padding:"10px 12px",fontSize:12,color:C.green,fontWeight:600}}>✅ Sau khi kết nối, dữ liệu lưu thẳng vào Google Sheet!</div></div>},
+  ];
+  return(<Modal onClose={onClose}><ModalHeader title="⚙️ Kết nối Google Sheets" onClose={onClose}/>
+    <div style={{display:"flex",gap:4,marginBottom:18}}>{steps.map(s=><div key={s.n} onClick={()=>setStep(s.n)} style={{flex:1,height:4,borderRadius:4,cursor:"pointer",background:step>=s.n?C.blue:C.divider,transition:"all 0.2s"}}/>)}</div>
+    {steps.filter(s=>s.n===step).map(s=><div key={s.n}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}><div style={{width:36,height:36,borderRadius:"50%",background:C.blueLight,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{s.icon}</div><div><div style={{fontSize:11,color:C.textMuted,fontWeight:600}}>BƯỚC {s.n}/5</div><div style={{fontWeight:800,fontSize:15,color:C.text}}>{s.title}</div></div></div>{s.content}</div>)}
+    <div style={{display:"flex",gap:8,marginTop:18}}>{step>1&&<Btn onClick={()=>setStep(s=>s-1)} outline color={C.textSec} style={{flex:1}}>← Trước</Btn>}{step<5&&<Btn onClick={()=>setStep(s=>s+1)} color={C.blue} style={{flex:1}}>Tiếp →</Btn>}{step===5&&<Btn onClick={onClose} color={C.green} style={{flex:1}}>✅ Hoàn tất</Btn>}</div>
+  </Modal>);}
+
+/* ── SellerTabs ─────────────────────────────────────────────── */
+function SellerTabs({active,onChange}){
+  const tabs=[{id:"sell",ic:"🛒",lb:"Bán"},{id:"orders",ic:"📋",lb:"Đơn"},{id:"debt",ic:"💰",lb:"Nợ"},{id:"customers",ic:"👥",lb:"KH"},{id:"nguon",ic:"📝",lb:"Đơn tạm"},{id:"profile",ic:"👤",lb:"Hồ Sơ"}];
+  return(
+    <div style={{display:"flex",background:C.card,borderBottom:`2px solid ${C.blue}`,position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 8px rgba(21,101,192,0.1)"}}>
+      {tabs.map(t=>(
+        <button key={t.id} onClick={()=>onChange(t.id)} style={{flex:1,padding:"8px 1px 6px",border:"none",cursor:"pointer",fontFamily:font,background:active===t.id?C.blue:"transparent",color:active===t.id?"white":C.textSec,fontWeight:active===t.id?800:500,transition:"all 0.18s",minWidth:0,overflow:"hidden"}}>
+          <div style={{fontSize:15}}>{t.ic}</div>
+          <div style={{fontSize:8,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.lb}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── CustomerNav ────────────────────────────────────────────── */
+function CustomerNav({active,onChange}){
+  const tabs=[{id:"shop",ic:"🛍",lb:"Mua Hàng"},{id:"orders",ic:"📦",lb:"Đơn Của Tôi"},{id:"debt",ic:"💳",lb:"Công Nợ"},{id:"profile",ic:"👤",lb:"Tài Khoản"}];
+  return(<div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:C.card,borderTop:`1px solid ${C.border}`,display:"flex",boxShadow:"0 -4px 16px rgba(0,0,0,0.08)",zIndex:50}}>{tabs.map(t=><button key={t.id} onClick={()=>onChange(t.id)} style={{flex:1,padding:"9px 4px 7px",border:"none",cursor:"pointer",fontFamily:font,background:"transparent",color:active===t.id?C.blue:C.textMuted,fontWeight:active===t.id?800:500,transition:"all 0.18s"}}><div style={{fontSize:20}}>{t.ic}</div><div style={{fontSize:10,marginTop:1}}>{t.lb}</div></button>)}</div>);}
+
+/* ── Login ──────────────────────────────────────────────────── */
+function Login({allUsers,onLogin,onSaveUrl,scriptUrl,loadingAccounts=false}){
+  const [u,setU]=useState(()=>{try{return localStorage.getItem("saved_u")||""}catch{return ""}});
+  const [p,setP]=useState(()=>{try{return localStorage.getItem("saved_p")||""}catch{return ""}});
+  const [showP,setShowP]=useState(false);
+  const [rememberMe,setRememberMe]=useState(()=>{try{return !!(localStorage.getItem("saved_u"))}catch{return false}});
+  const [url,setUrl]=useState(scriptUrl||"");
+  const [showUrl,setShowUrl]=useState(false);const [err,setErr]=useState("");const [loading,setLoading]=useState(false);
+  const [showGuide,setShowGuide]=useState(false);
+  const login=async()=>{
+    if(!u||!p){setErr("Vui lòng nhập đầy đủ");return;}
+    setLoading(true);await new Promise(r=>setTimeout(r,350));
+    const found=allUsers.find(x=>String(x.username)===u.trim()&&String(x.password)===p.trim());
+    if(!found){setErr("Sai tài khoản hoặc mật khẩu");setLoading(false);return;}
+    if(rememberMe&&localStorage.setItem){localStorage.setItem("saved_u",u);localStorage.setItem("saved_p",p);}
+    else if(localStorage.removeItem){localStorage.removeItem("saved_u");localStorage.removeItem("saved_p");}
+    onSaveUrl(url);onLogin(found);
+  };
+  return(<div style={{minHeight:"100vh",background:`linear-gradient(135deg,${C.blue} 0%,${C.teal} 100%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20,fontFamily:font}}>
+    {showGuide&&<GSGuide onClose={()=>setShowGuide(false)}/>}
+    <div style={{textAlign:"center",marginBottom:26,color:"white"}}><div style={{fontSize:52,marginBottom:8}}>🏪</div><div style={{fontSize:24,fontWeight:900,letterSpacing:-0.5}}>Cửa Hàng Online</div><div style={{fontSize:13,opacity:0.8,marginTop:4}}>Quản lý đơn hàng thông minh</div>
+        <div style={{fontSize:11,opacity:0.65,marginTop:6,lineHeight:1.6,color:"white"}}>Người phát triển: <b>Trần Anh Hiền</b><br/>📞 0916352536</div></div>
+    <div style={{width:"100%",maxWidth:360,background:"white",borderRadius:24,padding:26,boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}}>
+      <h2 style={{margin:"0 0 20px",fontSize:19,fontWeight:800,color:C.text,textAlign:"center"}}>Đăng nhập</h2>
+      <div style={{marginBottom:12}}><Inp value={u} onChange={v=>{setU(v);setErr("");}} placeholder="Tên đăng nhập" pfx="👤"/></div>
+      <div style={{marginBottom:10,position:"relative"}}>
+        <Inp value={p} onChange={v=>{setP(v);setErr("");}} onKeyDown={e=>e.key==="Enter"&&login()} placeholder="Mật khẩu" type={showP?"text":"password"} pfx="🔑"/>
+        <button onClick={()=>setShowP(s=>!s)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:C.textMuted}}>{showP?"🙈":"👁️"}</button>
+      </div>
+      <label style={{display:"flex",alignItems:"center",gap:8,marginBottom:14,cursor:"pointer",fontSize:13,color:C.textSec}}>
+        <input type="checkbox" checked={rememberMe} onChange={e=>setRememberMe(e.target.checked)} style={{width:16,height:16}}/>
+        Lưu mật khẩu
+      </label>
+      {err&&<div style={{color:C.red,fontSize:13,marginBottom:10,fontWeight:600,textAlign:"center"}}>⚠️ {err}</div>}
+      {loadingAccounts&&<div style={{fontSize:12,color:C.textMuted,textAlign:"center",marginBottom:8}}>⏳ Đang tải tài khoản...</div>}
+      <Btn onClick={login} full color={C.blue} disabled={loading||loadingAccounts}>{loading?"Đang đăng nhập...":loadingAccounts?"Vui lòng chờ...":"Đăng nhập →"}</Btn>
+      <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:12}}>
+        <span onClick={()=>setShowUrl(s=>!s)} style={{fontSize:12,color:C.textMuted,cursor:"pointer",textDecoration:"underline"}}>⚙️ Cấu hình Google Sheets</span>
+        <span style={{color:C.divider}}>|</span>
+        <span onClick={()=>setShowGuide(true)} style={{fontSize:12,color:C.blue,cursor:"pointer",fontWeight:700}}>📖 Hướng dẫn</span>
+      </div>
+      {showUrl&&<div style={{marginTop:10}}><Inp value={url} onChange={setUrl} placeholder="Apps Script URL..."/><div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Để trống = dùng dữ liệu mẫu</div></div>}
+
+    </div>
+  </div>);}
+
+/* ── SELLER PROFILE ─────────────────────────────────────────── */
+function SellerProfile({currentUser,onLogout,onUpdateUser,orders,debts,customers,scriptUrl,onSaveUrl,api}){
+  const [showGuide,setShowGuide]=useState(false);
+  const [editing,setEditing]=useState(false);
+  const [shopName,setShopName]=useState(currentUser.ten||"");
+  const [shopPhone,setShopPhone]=useState(currentUser.sdt||"");
+  const [toast,setToast]=useState("");
+  const [showPicker,setShowPicker]=useState(false);
+  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(""),2500);};
+
+  const saveInfo=()=>{
+    if(api) api.post("updateUser",{id:currentUser.id,ten:shopName.trim(),sdt:shopPhone.trim()}).catch(()=>{});
+    onUpdateUser&&onUpdateUser({...currentUser,ten:shopName.trim(),sdt:shopPhone.trim()});
+    setEditing(false); notify("✅ Đã lưu!");
+  };
+
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",paddingBottom:40,fontFamily:font}}>
+      {showGuide&&<GSGuide onClose={()=>setShowGuide(false)}/>}
+      {/* Header */}
+      {showPicker&&<AvatarPicker current={currentUser.avatar||""} onSelect={async(v)=>{avatarCache.set(currentUser.id,v);onUpdateUser&&onUpdateUser({...currentUser,avatar:v});setShowPicker(false);if(api) api.post("updateUser",{id:currentUser.id,ten:shopName,sdt:shopPhone,avatar:v}).catch(()=>{});}} onClose={()=>setShowPicker(false)}/>}
+      <div style={{background:`linear-gradient(135deg,${C.blue},${C.teal})`,padding:"28px 20px 36px",textAlign:"center"}}>
+        <div style={{position:"relative",display:"inline-block",marginBottom:12}} onClick={()=>setShowPicker(true)}>
+          <Avatar user={{...currentUser,avatar:currentUser.avatar||avatarCache.get(currentUser.id)||""}} size={80} style={{border:"3px solid rgba(255,255,255,0.6)",cursor:"pointer"}}/>
+          <div style={{position:"absolute",bottom:2,right:0,width:24,height:24,borderRadius:"50%",background:"white",border:`2px solid ${C.blue}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,boxShadow:"0 2px 6px rgba(0,0,0,0.25)",pointerEvents:"none"}}>📷</div>
+        </div>
+        <div style={{color:"white",fontWeight:900,fontSize:20}}>{shopName||currentUser.ten}</div>
+        <div style={{color:"rgba(255,255,255,0.75)",fontSize:13,marginTop:3}}>@{currentUser.username}</div>
+        {shopPhone&&<div style={{color:"rgba(255,255,255,0.7)",fontSize:12,marginTop:2}}>📞 {shopPhone}</div>}
+      </div>
+      {/* Shop info */}
+      <div style={{margin:"12px 14px 0"}}>
+        <Card style={{padding:0,overflow:"hidden",marginBottom:12}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:`1px solid ${C.divider}`}}>
+            <div style={{fontWeight:700,fontSize:14,color:C.text}}>Thông tin cửa hàng</div>
+            <Btn sm onClick={()=>editing?saveInfo():setEditing(true)} outline color={C.blue}>{editing?"✅ Lưu":"✏️ Sửa"}</Btn>
+          </div>
+          {[["🏪","Tên cửa hàng","ten"],["📞","Số điện thoại","sdt"]].map(([ic,lb,field])=>(
+            <div key={field} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderBottom:`1px solid ${C.divider}`}}>
+              <span style={{fontSize:18}}>{ic}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11,color:C.textMuted,fontWeight:600,marginBottom:2}}>{lb}</div>
+                {editing?<Inp value={field==="ten"?shopName:shopPhone} onChange={field==="ten"?setShopName:setShopPhone} placeholder={lb}/>
+                :<div style={{fontWeight:700,fontSize:14,color:C.text}}>{field==="ten"?shopName||"—":shopPhone||"—"}</div>}
+              </div>
+            </div>
+          ))}
+          <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px"}}>
+            <span style={{fontSize:18}}>🔑</span>
+            <div style={{flex:1}}><div style={{fontSize:11,color:C.textMuted,fontWeight:600,marginBottom:2}}>Tài khoản</div><div style={{fontWeight:700,fontSize:14,color:C.text}}>{currentUser.username}</div></div>
+          </div>
+        </Card>
+        <Card style={{padding:"14px 16px",marginBottom:12}}>
+          <div style={{fontWeight:700,fontSize:13,color:C.text,marginBottom:8}}>⚙️ Kết nối Google Sheets</div>
+          <Inp value={scriptUrl||""} onChange={onSaveUrl} placeholder="https://script.google.com/..." style={{marginBottom:8}}/>
+          <div style={{display:"flex",gap:8}}>
+            <Btn onClick={()=>notify("✅ Đã lưu URL!")} color={C.blue} style={{flex:1}}>💾 Lưu</Btn>
+            <Btn onClick={()=>setShowGuide(true)} outline color={C.textSec} style={{flex:1}}>📖 Hướng dẫn</Btn>
+          </div>
+          <div style={{fontSize:11,color:C.textMuted,marginTop:6,textAlign:"center"}}>Để trống = dùng dữ liệu mẫu</div>
+        </Card>
+        <div style={{fontSize:11,color:C.textMuted,textAlign:"center",marginBottom:8}}>
+          Người phát triển: <b>Trần Anh Hiền</b> · 📞 0916352536
+        </div>
+        <button onClick={onLogout} style={{width:"100%",padding:12,borderRadius:14,border:`2px solid ${C.red}`,background:"transparent",color:C.red,fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:font}}>🚪 Đăng xuất</button>
+      </div>
+      <Toast msg={toast}/>
+    </div>
+  );
+}
+
+
+/* ── PRINT MODAL ────────────────────────────────────────────── */
+function PrintModal({data,onClose}){
+  const ref=useRef(null);
+  if(!data) return null;
+  const thStyle={padding:"6px 8px",background:"#1565C0",color:"white",fontWeight:700,fontSize:11,textAlign:"left"};
+  const tdStyle=(i)=>({padding:"5px 8px",borderBottom:"1px solid #E2E8F0",fontSize:12,background:i%2===0?"#F8FAFC":"white"});
+  const zaText=`${data.title}\n${data.date}\n\n`+data.rows.map((r,i)=>`${i+1}. ${r.tenHang||r.ten}${r.ghiChu?` 📝${r.ghiChu}`:r.tenKH&&data.type!=="tong"?` (${r.tenKH})`:""}: ${r.sl}`).join("\n");
+  return(
+    <Modal onClose={onClose}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <div><div style={{fontWeight:800,fontSize:15,color:C.blue}}>{data.title}</div><div style={{fontSize:11,color:C.textMuted}}>{data.date}</div></div>
+        <div style={{display:"flex",gap:6}}>
+          <Btn sm outline color={C.blue} onClick={async()=>{
+            if(!window.html2canvas||!ref.current) return;
+            const cv=await window.html2canvas(ref.current,{scale:2,useCORS:true,backgroundColor:"#fff"});
+            cv.toBlob(async(blob)=>{
+              if(navigator.share&&navigator.canShare){
+                const file=new File([blob],`don-${Date.now()}.jpg`,{type:"image/jpeg"});
+                if(navigator.canShare({files:[file]})){
+                  try{await navigator.share({files:[file],title:data.title});return;}
+                  catch(e){if(e.name==="AbortError") return;}
+                }
+              }
+              const url=URL.createObjectURL(blob);
+              const a=document.createElement("a");a.href=url;a.download=`don-${Date.now()}.jpg`;a.click();
+              setTimeout(()=>URL.revokeObjectURL(url),1000);
+            },"image/jpeg",0.9);
+          }}>🖼️ Chia sẻ ảnh</Btn>
+        </div>
+      </div>
+      <div ref={ref} style={{background:"white",padding:"8px 4px"}}>
+        <div style={{fontWeight:800,fontSize:13,color:C.blue,marginBottom:6}}>{data.title} — {data.date}</div>
+        <table style={{width:"100%",borderCollapse:"collapse"}}>
+          <thead><tr><th style={thStyle}>STT</th>{data.type!=="tong"&&<th style={{...thStyle,width:90,whiteSpace:"nowrap"}}>KHÁCH</th>}<th style={{...thStyle,width:"99%"}}>TÊN HÀNG</th><th style={{...thStyle,textAlign:"center"}}>SL</th></tr></thead>
+          <tbody>{data.rows.map((r,i)=>(
+            <tr key={i}><td style={tdStyle(i)}>{i+1}</td>{data.type!=="tong"&&<td style={{...tdStyle(i),fontWeight:600,whiteSpace:"nowrap",minWidth:90}}>{r.tenKH||"—"}</td>}
+              <td style={tdStyle(i)}>{r.tenHang||r.ten}{r.ghiChu&&<div style={{fontSize:10,color:"#888",marginTop:2}}>📝 {r.ghiChu}</div>}</td>
+              <td style={{...tdStyle(i),textAlign:"center",fontWeight:800,color:"#1565C0"}}>{r.sl}</td></tr>
+          ))}</tbody>
+        </table>
+        <div style={{textAlign:"right",fontWeight:800,fontSize:13,marginTop:6,paddingRight:4}}>TỔNG: {data.rows.reduce((a,r)=>a+r.sl,0)}</div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ── NGUON HANG TAB (Đơn Tạm) ───────────────────────────────── */
+function NguonHangTab({orders,products,setOrders,setDebts,api,onEditOrder}){
+  const [sel,setSel]=useState(null);
+  const [selSrc,setSelSrc]=useState(null); // nguồn đang xem chi tiết
+  const [printData,setPrintData]=useState(null);
+  const [toast,setToast]=useState("");
+  const [busyApprove,setBusyApprove]=useState(false);
+  const srcDetailRef=useRef(null);
+  const [busyDel,setBusyDel]=useState(false);
+  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(""),2500);};
+  const prodMap=useMemo(()=>{const m={};products.forEach(p=>{m[p.id]=p;});return m;},[products]);
+  const pendingOrders=orders.filter(o=>o.trangThai==="pending").sort((a,b)=>new Date(b.ngay)-new Date(a.ngay));
+
+  const deleteAllPending=async()=>{
+    if(!window.confirm(`Xoá tất cả ${pendingOrders.length} đơn tạm?`)) return;
+    setBusyDel(true);
+    try{
+      for(const o of pendingOrders){
+        if(api) await api.post("cancelOrder",{id:o.id,maKH:o.maKH||"",tenKH:o.tenKH||"",tongTien:o.tongTien||0,reversDebt:false});
+      }
+      setOrders(os=>os.filter(o=>o.trangThai!=="pending"));
+      notify("✅ Đã xoá tất cả đơn tạm!");
+    }catch(e){notify("⚠️ Có lỗi: "+e.message);}
+    finally{setBusyDel(false);}
+  };
+
+  // Tổng hợp theo nguồn
+  const bySrc=useMemo(()=>{
+    const m={};
+    pendingOrders.forEach(o=>o.items?.forEach(it=>{
+      const src=it.nhom||prodMap[it.maSP]?.nhom||"Khác";
+      if(!m[src]) m[src]={src,sl:0,chi:0,thu:0,lai:0,don:0};
+      const chi=(it.von||prodMap[it.maSP]?.von||0)*it.sl;
+      const thu=it.gia*it.sl;
+      m[src].sl+=it.sl; m[src].chi+=chi; m[src].thu+=thu; m[src].lai+=thu-chi; m[src].don++;
+    }));
+    return Object.entries(m).sort((a,b)=>b[1].thu-a[1].thu);
+  },[pendingOrders,prodMap]);
+
+  const totals=pendingOrders.reduce((a,o)=>({
+    sl:a.sl+(o.items?.reduce((s,i)=>s+i.sl,0)||0),
+    chi:a.chi+(o.tongVon||0),
+    thu:a.thu+o.tongTien,
+    lai:a.lai+(o.tongTien-(o.tongVon||0))
+  }),{sl:0,chi:0,thu:0,lai:0});
+
+  const approve=async(id)=>{
+    if(busyApprove) return; setBusyApprove(true);
+    try{
+      const o=orders.find(x=>x.id===id); if(!o) return;
+
+      // Bước 1: Cập nhật DonHang → done
+      if(api){
+        const r=await api.post("approveOrder",{id});
+        if(r?.error){ notify("⚠️ Lỗi duyệt: "+r.error); return; }
+      }
+      setOrders(os=>os.map(x=>x.id===id?{...x,trangThai:"done"}:x));
+
+      // Bước 2: Ghi CongNo (giống flow Bán) — chỉ với khách có tên
+      if(o.maKH && o.maKH!=="le"){
+        const de={
+          id:genId("CN"), maKH:o.maKH, tenKH:o.tenKH,
+          loai:"no", soTien:o.tongTien,
+          ngay:nowISO(), ghiChu:id, maDon:id
+        };
+        if(api){
+          const r2=await api.post("addDebt",de);
+          if(r2?.error) notify("⚠️ Lỗi ghi nợ: "+r2.error);
+        }
+        setDebts&&setDebts(ds=>[de,...ds]);
+      }
+
+      notify("✅ Đã duyệt!"); setSel&&setSel(null);
+    }finally{setBusyApprove(false);}
+  };
+
+  const printOrder=(o)=>{
+    const rows=o.items?.map(it=>({tenKH:o.tenKH,tenHang:it.ten,sl:it.sl,ghiChu:it.ghiChu||""}));
+    setPrintData({title:`ĐƠN TẠM ${o.id}`,date:fmtDate(o.ngay),rows:rows||[],type:"chitiet"});
+  };
+
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",paddingBottom:80,fontFamily:font}}>
+      {printData&&<PrintModal data={printData} onClose={()=>setPrintData(null)}/>}
+      {/* Tổng hợp theo nguồn */}
+      <div style={{background:C.card,padding:"12px 14px",borderBottom:`1px solid ${C.divider}`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+          <div style={{fontWeight:800,fontSize:14,color:C.orange}}>📝 Tổng hợp đơn tạm</div>
+          {pendingOrders.length>0&&<button onClick={deleteAllPending} disabled={busyDel}
+            style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${C.red}`,background:"white",color:C.red,fontWeight:700,fontSize:11,cursor:"pointer",fontFamily:font}}>
+            {busyDel?"⏳...":"🗑️ Xoá tất cả"}
+          </button>}
+        </div>
+        {bySrc.length===0?<div style={{fontSize:12,color:C.textMuted,textAlign:"center",padding:"6px 0"}}>Không có đơn tạm</div>:<>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 40px 56px 56px 50px",gap:4,marginBottom:4,fontSize:10,color:C.textMuted,fontWeight:700,padding:"0 2px"}}>
+            <span>NGUỒN</span><span style={{textAlign:"right"}}>SL</span><span style={{textAlign:"right",color:C.red}}>CHI</span><span style={{textAlign:"right",color:C.blue}}>THU</span><span style={{textAlign:"right",color:C.green}}>LÃI</span>
+          </div>
+          {bySrc.map(([src,s])=>(
+            <div key={src} onClick={()=>setSelSrc(src)}
+              style={{display:"grid",gridTemplateColumns:"1fr 40px 56px 56px 50px",gap:4,padding:"6px 2px",borderTop:`1px solid ${C.divider}`,fontSize:12,cursor:"pointer",background:selSrc===src?C.blueLight:"transparent",borderRadius:4}}>
+              <span style={{fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{src}</span>
+              <span style={{textAlign:"right",color:C.textSec}}>{s.sl}</span>
+              <span style={{textAlign:"right",color:C.red,fontSize:11}}>{fmt(s.chi)}</span>
+              <span style={{textAlign:"right",color:C.blue,fontSize:11}}>{fmt(s.thu)}</span>
+              <span style={{textAlign:"right",color:C.green,fontWeight:700,fontSize:11}}>{fmt(s.lai)}</span>
+            </div>
+          ))}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 40px 56px 56px 50px",gap:4,padding:"5px 2px",borderTop:`2px solid ${C.border}`,fontSize:12,fontWeight:800}}>
+            <span>TỔNG ({pendingOrders.length} đơn)</span>
+            <span style={{textAlign:"right"}}>{totals.sl}</span>
+            <span style={{textAlign:"right",color:C.red}}>{fmt(totals.chi)}</span>
+            <span style={{textAlign:"right",color:C.blue}}>{fmt(totals.thu)}</span>
+            <span style={{textAlign:"right",color:C.green,fontWeight:800}}>{fmt(totals.lai)}</span>
+          </div>
+        </>}
+      </div>
+      {/* Chi tiết nguồn — modal */}
+      {selSrc&&(()=>{
+        const srcOrders=pendingOrders.filter(o=>o.items?.some(it=>(it.nhom||prodMap[it.maSP]?.nhom||"Khác")===selSrc));
+        const srcRows=srcOrders.flatMap(o=>o.items?.filter(it=>(it.nhom||prodMap[it.maSP]?.nhom||"Khác")===selSrc).map(it=>({tenKH:o.tenKH,tenHang:it.ten,sl:it.sl,ghiChu:it.ghiChu||""})));
+        const srcTotal=srcRows.reduce((a,r)=>a+r.sl,0);
+        return(
+          <Modal onClose={()=>setSelSrc(null)}>
+            <div style={{marginBottom:12}}>
+              <div style={{fontWeight:900,fontSize:17,color:C.blue,marginBottom:8}}>📦 Nguồn {selSrc}</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"flex-end"}}>
+              <Btn sm outline color={C.blue} onClick={()=>{
+                setPrintData({title:`ĐƠN TẠM: ${selSrc.toUpperCase()}`,date:new Date().toLocaleDateString("vi"),rows:srcRows,type:"chitiet"});
+                setSelSrc(null);
+              }}>🖨️ In</Btn>
+              <Btn sm color={C.green} onClick={()=>{
+                // Tổng hợp theo sản phẩm
+                const spMap={};
+                srcRows.forEach(r=>{if(!spMap[r.tenHang]) spMap[r.tenHang]=0; spMap[r.tenHang]+=r.sl;});
+                const spRows=Object.entries(spMap).map(([ten,sl])=>({tenHang:ten,sl}));
+                setPrintData({title:`TỔNG SP: ${selSrc.toUpperCase()}`,date:new Date().toLocaleDateString("vi"),rows:spRows,type:"tong"});
+                setSelSrc(null);
+              }}>📊 Tổng SP</Btn>
+              <button onClick={()=>setSelSrc(null)} style={{background:C.divider,border:"none",borderRadius:"50%",width:28,height:28,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+              </div>
+            </div>
+            <div ref={srcDetailRef} style={{background:"white",padding:"8px 4px"}}>
+              
+              <div style={{fontSize:11,color:C.textMuted,marginBottom:10}}>{new Date().toLocaleDateString("vi")} · {srcOrders.length} đơn · {srcTotal} sản phẩm</div>
+              {srcRows.map((r,i)=>(
+                <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 1fr 32px",gap:6,padding:"6px 0",borderBottom:`1px solid ${C.divider}`,fontSize:12}}>
+                  <span style={{fontWeight:600,color:C.text}}>{r.tenHang}{r.ghiChu&&<span style={{color:C.textMuted,fontWeight:400}}> 📝{r.ghiChu}</span>}</span>
+                  <span style={{color:C.textMuted,fontSize:11}}>{r.tenKH}</span>
+                  <span style={{fontWeight:800,color:C.orange,textAlign:"right"}}>×{r.sl}</span>
+                </div>
+              ))}
+              <div style={{display:"flex",justifyContent:"flex-end",paddingTop:8,fontWeight:800,fontSize:13}}>TỔNG: {srcTotal} sp</div>
+            </div>
+          </Modal>
+        );
+      })()}
+      {/* Danh sách đơn */}
+      <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:8}}>
+        {pendingOrders.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted}}><div style={{fontSize:40}}>📭</div><div style={{fontWeight:600,marginTop:8}}>Không có đơn tạm</div></div>}
+        {pendingOrders.map(o=>(
+          <Card key={o.id} onClick={()=>setSel(o)} style={{padding:"12px 14px",border:`1.5px solid ${C.amber}44`,background:"#FFFBEB"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+              <div>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                  <span style={{fontWeight:800,fontSize:12,color:C.orange}}>{o.id}</span>
+                  <Badge label="⏳ Chờ" color={C.orange} bg={C.orangeLight} size={10}/>
+                </div>
+                <div style={{fontWeight:700,fontSize:14,color:C.text}}>{o.tenKH}</div>
+                <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{fmtDate(o.ngay)} · {o.items?.length||0} sp</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontWeight:900,fontSize:16,color:C.orange}}>{fmt(o.tongTien)}</div>
+                <Btn onClick={e=>{e.stopPropagation();approve(o.id);}} color={C.green} sm disabled={busyApprove} style={{marginTop:4}}>{busyApprove?"...":"✅ Duyệt"}</Btn>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+              {o.items?.slice(0,3).map((it,i)=><span key={i} style={{background:"#FEF3C7",padding:"2px 8px",borderRadius:8,fontSize:11,color:C.orange,fontWeight:600}}>{it.ten.length>12?it.ten.slice(0,12)+"…":it.ten} ×{it.sl}</span>)}
+              {(o.items?.length||0)>3&&<span style={{fontSize:11,color:C.textMuted}}>+{o.items.length-3} sp</span>}
+            </div>
+          </Card>
+        ))}
+      </div>
+      {/* Detail modal */}
+      {sel&&(
+        <Modal onClose={()=>setSel(null)}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+            <div style={{fontWeight:800,fontSize:16,color:C.orange,flex:1}}>{sel.id}</div>
+            <Badge label="⏳ Chờ duyệt" color={C.orange} bg={C.orangeLight}/>
+            <button onClick={()=>setSel(null)} style={{background:C.divider,border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+          </div>
+          <div style={{marginBottom:12}}><div style={{fontSize:11,color:C.textMuted}}>Khách hàng</div><div style={{fontWeight:800,fontSize:16,color:C.text}}>{sel.tenKH}</div><div style={{fontSize:12,color:C.textMuted,marginTop:2}}>{fmtDate(sel.ngay)}</div></div>
+          {sel.items?.map((it,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"8px 0",borderBottom:`1px solid ${C.divider}`}}>
+              <div><div style={{fontWeight:700,color:C.text}}>{it.ten}{it.ghiChu&&<span style={{fontSize:11,color:C.textMuted}}> 📝 {it.ghiChu}</span>}</div><div style={{color:C.textSec,fontSize:12}}>{fmt(it.gia)} × {it.sl}</div></div>
+              <div style={{fontWeight:800,color:C.orange}}>{fmt(it.gia*it.sl)}</div>
+            </div>
+          ))}
+          <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",marginBottom:10}}>
+            <span style={{fontWeight:800,fontSize:16}}>Tổng tiền</span>
+            <span style={{fontWeight:900,fontSize:20,color:C.orange}}>{fmt(sel.tongTien)}</span>
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <Btn onClick={async()=>{
+              let orderToEdit=sel;
+              // Lấy dữ liệu mới nhất từ GS nếu có API
+              if(api){
+                try{
+                  const res=await api.get("getDonHang");
+                  if(res?.data){
+                    const fresh=res.data.find(o=>o.id===sel.id);
+                    if(fresh) orderToEdit=fresh;
+                  }
+                }catch(e){}
+              }
+              onEditOrder(orderToEdit);setSel(null);
+            }} color={C.blue} style={{flex:1}}>✏️ Sửa</Btn>
+            <Btn onClick={()=>approve(sel.id)} color={C.green} style={{flex:1}} disabled={busyApprove}>{busyApprove?"⏳...":"✅ Duyệt"}</Btn>
+            <Btn onClick={()=>{printOrder(sel);setSel(null);}} outline color={C.blue} style={{flex:1}}>🖨️ In</Btn>
+            <Btn onClick={async()=>{if(!window.confirm("Xoá đơn "+sel.id+"?")) return;
+              const isDone=sel.trangThai==="done";
+              if(api){
+                const res=await api.post("cancelOrder",{
+                  id:sel.id, maKH:sel.maKH||"", tenKH:sel.tenKH||"",
+                  tongTien:sel.tongTien||0,
+                  reversDebt:isDone&&sel.maKH!=="le"
+                });
+                if(res?.error) console.error("cancelOrder error:",res.error);
+              }
+              // Xóa đơn khỏi local state
+              setOrders(os=>os.filter(o=>o.id!==sel.id));
+              // Xóa công nợ liên quan khỏi local state (GAS đã xóa trên sheet)
+              if(isDone&&sel.maKH!=="le"&&setDebts){
+                setDebts(ds=>ds.filter(d=>d.maDon!==sel.id&&!(d.ghiChu||"").includes(sel.id)));
+              }
+              setSel(null);notify("✅ Đã xoá đơn!");}} style={{flex:1}}>🗑️ Xoá</Btn>
+          </div>
+        </Modal>
+      )}
+      <Toast msg={toast}/>
+    </div>
+  );
+}
+
+
+/* ── SELL KH SELECT (autocomplete on white bg for header) ─── */
+
+function SellTab({products,customers,setOrders,setDebts,api,editOrder,setEditOrder}){
+  const [cart,setCart]=useState({});
+  const [cartNote,setCartNote]=useState({});
+  const [cartGia,setCartGia]=useState({});
+  const [selKH,setSelKH]=useState("le");
+  const [search,setSearch]=useState("");
+  const [nhom,setNhom]=useState("Tất cả");
+  const [showCart,setShowCart]=useState(false);
+  const [toast,setToast]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [editingQty,setEditingQty]=useState(null);
+  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(""),2500);};
+  const reset=()=>{setCart({});setCartNote({});setCartGia({});setShowCart(false);setEditingQty(null);};
+  useEffect(()=>{
+    if(!editOrder) return;
+    const nc={},nn={},ng={};
+    editOrder.items?.forEach(it=>{
+      if(!it.maSP) return;
+      nc[it.maSP]=it.sl;
+      if(it.ghiChu) nn[it.maSP]=it.ghiChu;
+      // Luôn lấy giá đã lưu trong ChiTietDon — không dùng giá gốc sản phẩm
+      ng[it.maSP]=it.gia;
+    });
+    setCart(nc);setCartNote(nn);setCartGia(ng);setSelKH(editOrder.maKH||"le");setShowCart(true);
+  },[editOrder]);
+  const getGia=(p)=>{const v=cartGia[p.id];return(v===undefined||v===null||v==="")?p.gia:v;};
+  const nhomList=["Tất cả",...new Set(products.map(p=>p.nhom).filter(x=>x&&x!=="Khác"))];
+  const filtered=products.filter(p=>p.ten&&p.ten.trim()&&(nhom==="Tất cả"||p.nhom===nhom)&&(search===""||p.ten.toLowerCase().includes(search.toLowerCase())));
+  const cartProds=products.filter(p=>cart[p.id]>0);
+  const total=cartProds.reduce((a,p)=>a+Math.round(Number(getGia(p))||0)*(cart[p.id]||0),0);
+  const totalQty=Object.values(cart).reduce((a,b)=>a+b,0);
+  const add=(p)=>setCart(c=>({...c,[p.id]:Math.min(999,(c[p.id]||0)+1)}));
+  const dec=(p)=>setCart(c=>({...c,[p.id]:Math.max(0,(c[p.id]||0)-1)}));
+  const submit=async(mode)=>{
+    if(busy) return;
+    if(totalQty===0){notify("⚠️ Chưa có sản phẩm!");return;}
+    setBusy(true);
+    try{
+      const khObj=customers.find(k=>k.id===selKH);
+      console.log('[CART] cartGia:',cartGia);
+      const items=cartProds.map(p=>({maSP:p.id,ten:p.ten,nhom:p.nhom||"",sl:cart[p.id],gia:Math.round(Number(getGia(p))||Number(p.gia)||0),giaNiemYet:Math.round(Number(p.gia)||0),von:Math.round(Number(p.von)||0),ghiChu:cartNote[p.id]||""}));
+      const von=items.reduce((a,it)=>a+(it.von||0)*it.sl,0);
+
+      if(editOrder){
+        // Cập nhật đúng đơn cũ — giữ nguyên ID và ngày tạo
+        const newDebtId=genId("CN");
+        const isDoneOrder=editOrder.trangThai==="done";
+        const khNguoi=selKH!=="le";
+        // Gộp newDebtId vào 1 lần gọi duy nhất
+        const updated={
+          ...editOrder,
+          maKH:selKH==="le"?"le":selKH,
+          tenKH:khObj?.ten||"Khách lẻ",
+          tongTien:total, tongVon:von, items,
+          newDebtId: isDoneOrder&&khNguoi ? newDebtId : null,
+          isEdit: true
+        };
+        if(api){
+          const r=await api.post("updateOrder",updated);
+          if(r?.error) notify("⚠️ Lỗi GAS: "+r.error);
+        }
+        setOrders(os=>os.map(o=>o.id===editOrder.id?updated:o));
+        // Sync local debts: xóa CN cũ, thêm CN mới nếu đơn đã giao
+        if(isDoneOrder&&khNguoi){
+          const maKH=selKH; const tenKH=khObj?.ten||"Khách lẻ";
+          setDebts&&setDebts(ds=>[
+            {id:newDebtId,maKH,tenKH,loai:"no",soTien:total,ngay:nowISO(),ghiChu:`Bán ${editOrder.id}`,maDon:editOrder.id},
+            ...ds.filter(d=>d.maDon!==editOrder.id&&!(d.ghiChu||"").includes(editOrder.id))
+          ]);
+        }
+        setEditOrder(null); reset();
+        notify("✅ Đã cập nhật đơn "+editOrder.id+"!");
+        return;
+      }
+
+      const id=genId("BH");
+      const o={id,maKH:selKH==="le"?"le":selKH,tenKH:khObj?.ten||"Khách lẻ",ngay:nowISO(),trangThai:mode==="sell"?"done":"pending",tongTien:total,tongVon:von,items};
+      if(api) await api.post("createOrder",o);
+      setOrders(os=>[o,...os]);
+      if(mode==="sell"){const de={id:genId("CN"),maKH:selKH==="le"?"le":selKH,tenKH:khObj?.ten||"Khách lẻ",loai:"no",soTien:total,ngay:nowISO(),ghiChu:`Bán ${id}`,maDon:id};if(api){ const r=await api.post("addDebt",de); if(r?.error) console.error("addDebt error:",r.error,de); }setDebts(ds=>[de,...ds]);notify("✅ Bán hàng thành công!");}else{notify("✅ Đặt hàng thành công!");}
+      reset();
+    }catch(e){notify("❌ Lỗi: "+e.message);}finally{setBusy(false);}
+  };
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",paddingBottom:80,fontFamily:font}}>
+      {/* Sticky pinned header */}
+      <div style={{position:"sticky",top:48,zIndex:50,background:`linear-gradient(135deg,${C.blue},${C.teal})`,padding:"10px 12px",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
+        {/* Row 1: Khách + Ngày giờ + Cart */}
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+          <AutocompleteKH customers={customers} value={selKH} onChange={setSelKH} walkIn placeholder="👤 Khách lẻ — tìm khách..."/>
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{color:"white",fontSize:11,fontWeight:700,lineHeight:1.3}}>{(()=>{const n=new Date();return `${String(n.getDate()).padStart(2,'0')}/${String(n.getMonth()+1).padStart(2,'0')}/${String(n.getFullYear()).slice(-2)} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;})()}</div>
+            <div style={{color:"rgba(255,255,255,0.75)",fontSize:10}}></div>
+          </div>
+          {totalQty>0&&<button onClick={()=>setShowCart(true)} style={{background:"white",color:C.blue,border:"none",borderRadius:20,padding:"5px 12px",fontWeight:800,fontSize:12,cursor:"pointer",fontFamily:font,display:"flex",alignItems:"center",gap:5,flexShrink:0}}>🛒<span style={{background:C.blue,color:"white",borderRadius:9,minWidth:18,height:18,padding:"0 5px",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,boxSizing:"border-box"}}>{totalQty}</span>{fmt(total)}</button>}
+          {totalQty===0&&<div style={{color:"rgba(255,255,255,0.6)",fontSize:11}}>🛒 Trống</div>}
+        </div>
+      </div>
+      <div style={{background:C.card,borderBottom:`1px solid ${C.divider}`,position:"sticky",top:102,zIndex:20}}>
+        <div style={{padding:"10px 12px 4px",position:"relative"}}>
+          <Inp value={search} onChange={setSearch} placeholder="Tìm sản phẩm..." pfx="🔍" style={{paddingRight:search?36:14}}/>
+          {search&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"#CBD5E1",border:"none",borderRadius:"50%",width:22,height:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#64748B",fontWeight:700}}>✕</button>}
+        </div>
+        <div style={{padding:"0 12px 8px"}}><Pills options={nhomList} value={nhom} onChange={setNhom}/></div>
+        {(search||nhom!=="Tất cả")&&filtered.length>0&&(
+          <div style={{padding:"2px 12px 6px",display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+            {nhom!=="Tất cả"&&<span style={{display:"inline-flex",alignItems:"center",gap:4,background:C.blueLight,color:C.blue,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:700}}>
+              📂 {nhom}<button onClick={()=>setNhom("Tất cả")} style={{background:"none",border:"none",cursor:"pointer",padding:0,marginLeft:2,color:C.blue,fontSize:12,lineHeight:1}}>✕</button>
+            </span>}
+            {search&&<span style={{display:"inline-flex",alignItems:"center",gap:4,background:"#FEF3C7",color:"#92400E",borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:700}}>
+              🔍 "{search}"<button onClick={()=>setSearch("")} style={{background:"none",border:"none",cursor:"pointer",padding:0,marginLeft:2,color:"#92400E",fontSize:12,lineHeight:1}}>✕</button>
+            </span>}
+            <span style={{fontSize:11,color:C.textMuted}}>{filtered.length} sản phẩm</span>
+          </div>
+        )}
+      </div>
+      <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
+        {filtered.map(p=>{const qty=cart[p.id]||0;return(
+          <div key={p.id} style={{background:C.card,borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,boxShadow:C.shadow}}>
+            <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.ten}</div><div style={{display:"flex",alignItems:"center",gap:6,marginTop:1}}>
+                <div style={{fontSize:13,color:C.blue,fontWeight:800}}>{fmt(p.gia)}</div>
+                {p.nhan&&<div style={{fontSize:11,color:C.textMuted,fontStyle:"italic"}}>{p.nhan}</div>}
+              </div></div>
+            {(qty===0&&editingQty!==p.id)?<button onClick={()=>add(p)} style={{background:C.blue,color:"white",border:"none",borderRadius:"50%",width:34,height:34,cursor:"pointer",fontSize:20,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</button>
+            :<div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+              <button onClick={()=>dec(p)} style={{background:"#E2E8F0",border:"none",borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+              {editingQty===p.id?<input autoFocus inputMode="numeric" value={cart[p.id]||0} onChange={e=>{const v=e.target.value.replace(/[^0-9]/g,"");setCart(cc=>({...cc,[p.id]:v===""?0:Math.min(999,Math.max(0,parseInt(v)||0))}));}} onBlur={e=>{const v=parseInt(e.target.value)||0;setCart(cc=>({...cc,[p.id]:v}));setEditingQty(null);}} onFocus={e=>e.target.select()} onKeyDown={e=>e.key==="Enter"&&setEditingQty(null)} style={{width:48,textAlign:"center",fontWeight:800,color:C.blue,fontSize:14,border:"none",borderBottom:`2px solid ${C.blue}`,outline:"none",fontFamily:font,background:"transparent"}}/>
+              :<span onClick={()=>setEditingQty(p.id)} style={{fontWeight:800,color:C.blue,minWidth:44,textAlign:"center",fontSize:14,cursor:"text"}}>{qty}</span>}
+              <button onClick={()=>add(p)} style={{background:C.green,color:"white",border:"none",borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+            </div>}
+          </div>
+        );})}
+        {filtered.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted}}><div style={{fontSize:40}}>🔍</div><div style={{fontWeight:600,marginTop:8}}>Không tìm thấy sản phẩm</div></div>}
+      </div>
+      {showCart&&(
+        <Modal onClose={()=>setShowCart(false)} fullBottom>
+          <ModalHeader title="🛒 Giỏ hàng" onClose={()=>setShowCart(false)}/>
+          {cartProds.map(p=>{const gia=getGia(p);return(
+            <div key={p.id} style={{padding:"10px 0",borderBottom:`1px solid ${C.divider}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:6}}>
+                <div style={{fontWeight:700,fontSize:14,color:C.text,flexShrink:0,maxWidth:"50%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.ten}</div>
+                <input value={cartNote[p.id]||""} onChange={e=>setCartNote(n=>({...n,[p.id]:e.target.value}))} placeholder="..." style={{flex:1,fontSize:12,padding:"2px 4px",border:"none",outline:"none",fontFamily:font,background:"transparent",color:C.textMuted,minWidth:0,fontStyle:"italic"}}/>
+              </div>
+              {/* Giá × SL = thành tiền — 1 hàng */}
+              {p.nhan&&<div style={{fontSize:11,color:C.textMuted,marginBottom:3,fontStyle:"italic"}}>📦 {p.nhan}</div>}
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <input
+                  type="number" inputMode="numeric"
+                  defaultValue={p.gia}
+                  value={cartGia[p.id]!==undefined?cartGia[p.id]:p.gia}
+                  onChange={e=>setCartGia(g=>({...g,[p.id]:e.target.value}))}
+                  onFocus={e=>e.target.select()}
+                  style={{width:76,textAlign:"right",padding:"3px 6px",border:`1px solid ${C.border}`,borderRadius:8,fontSize:13,fontWeight:700,color:C.blue,fontFamily:font,outline:"none"}}/>
+                <span style={{color:C.textMuted,fontSize:13}}>×</span>
+                <button onClick={()=>dec(p)} style={{width:26,height:26,borderRadius:"50%",border:"none",background:"#E2E8F0",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</button>
+                {editingQty===`cart_${p.id}`?<input autoFocus inputMode="numeric" defaultValue={cart[p.id]||""} onFocus={e=>e.target.select()} onBlur={e=>{const v=parseInt(e.target.value)||0;setCart(cc=>v>0?{...cc,[p.id]:v}:Object.fromEntries(Object.entries(cc).filter(([k])=>k!==p.id)));setEditingQty(null);}} onKeyDown={e=>{if(e.key==="Enter") e.target.blur();if(e.key==="Escape") setEditingQty(null);}} style={{width:52,textAlign:"center",fontWeight:800,color:C.blue,fontSize:14,border:"none",outline:"none",fontFamily:font,background:"transparent",flexShrink:0}}/>
+                :<span onClick={()=>setEditingQty(`cart_${p.id}`)} style={{fontWeight:800,color:C.blue,minWidth:40,textAlign:"center",fontSize:14,cursor:"text",flexShrink:0}}>{cart[p.id]}</span>}
+                <button onClick={()=>add(p)} style={{width:26,height:26,borderRadius:"50%",border:"none",background:C.green,color:"white",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</button>
+                <span style={{color:C.textMuted,fontSize:13}}>=</span>
+                <div style={{fontWeight:800,color:C.blue,fontSize:14,flex:1,textAlign:"right"}}>{fmt(gia*cart[p.id])}</div>
+              </div>
+            </div>
+          );})}
+          <div style={{display:"flex",justifyContent:"space-between",padding:"12px 0",borderTop:`2px solid ${C.divider}`,marginBottom:4}}>
+            <div><div style={{fontSize:11,color:C.textMuted}}>Số lượng</div><div style={{fontWeight:700}}>{cartProds.reduce((a,p)=>a+cart[p.id],0)} sp</div></div>
+            <div style={{textAlign:"right"}}><div style={{fontSize:11,color:C.textMuted}}>Tổng tiền</div><div style={{fontWeight:900,fontSize:18,color:C.blue}}>{fmt(total)}</div></div>
+          </div>
+          {editOrder
+            ?<div style={{display:"flex",gap:8}}>
+              <Btn onClick={()=>{setEditOrder(null);reset();}} outline color={C.red} style={{flex:1}}>🗑️ Huỷ</Btn>
+              <Btn onClick={()=>submit("update")} color={C.blue} style={{flex:2}} disabled={busy}>{busy?"⏳...":"✅ Cập nhật đơn"}</Btn>
+            </div>
+            :<div style={{display:"flex",gap:8}}>
+              <Btn onClick={reset} outline color={C.red} style={{flex:1}}>🗑️ Xoá</Btn>
+              <Btn onClick={()=>submit("order")} outline color={C.orange} style={{flex:1}} disabled={busy}>📋 Đặt</Btn>
+              <Btn onClick={()=>submit("sell")} color={C.green} style={{flex:1}} disabled={busy}>💰 Bán</Btn>
+            </div>
+          }
+        </Modal>
+      )}
+      <Toast msg={toast}/>
+    </div>
+  );
+}
+
+/* ── ORDERS TAB ─────────────────────────────────────────────── */
+/* ── INVOICE MODAL (receipt format) ────────────────────────── */
+function InvoiceModal({order,shopName,shopAvatar,onClose}){
+  const ref=useRef(null);
+  const totalSP=order.items?.reduce((a,i)=>a+i.sl,0)||0;
+  const notify=(m)=>alert(m);
+
+  const doShare=async()=>{
+    if(!window.html2canvas||!ref.current) return;
+    const canvas=await window.html2canvas(ref.current,{scale:2,useCORS:true,backgroundColor:"#ffffff"});
+    canvas.toBlob(async(blob)=>{
+      if(navigator.share&&navigator.canShare){
+        const file=new File([blob],`don-${order.id}.jpg`,{type:"image/jpeg"});
+        if(navigator.canShare({files:[file]})){
+          try{await navigator.share({files:[file],title:`Đơn hàng ${order.id}`,text:`${shopName} - ${order.tenKH}`});return;}
+          catch(e){if(e.name==="AbortError") return;}
+        }
+      }
+      // Fallback download
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");a.href=url;a.download=`don-${order.id}.jpg`;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    },"image/jpeg",0.9);
+  };
+
+  const doZalo=()=>{
+    const lines=order.items?.map((it,i)=>`${i+1}. ${it.ten} x${it.sl} = ${fmt(it.gia*it.sl)}`).join("\n");
+    const text=[shopName,"KH: "+order.tenKH+" - "+order.id,fmtDate(order.ngay),"──────────────────────────",lines,"──────────────────────────","Tổng "+totalSP+" SP: "+fmt(order.tongTien)].join("\n");
+    navigator.clipboard?.writeText(text).then(()=>alert("✅ Đã copy! Dán vào Zalo"));
+  };
+
+  const doPDF=()=>{
+    const w=window.open("","_blank");
+    const rows=(order.items||[]).map((it,i)=>"<tr><td>"+(i+1)+"</td><td>"+it.ten+"</td><td>"+it.sl+"</td><td>"+fmt(it.gia)+"</td><td><b>"+fmt(it.gia*it.sl)+"</b></td></tr>").join("");
+    const html="<html><head><title>Don "+order.id+"</title><style>body{font-family:monospace;max-width:320px;margin:20px auto;font-size:13px}table{width:100%;border-collapse:collapse}td{padding:3px 4px}hr{border:1px dashed #000}.tot{font-weight:900}h3{text-align:center;margin:4px 0}</style></head><body>"
+      +"<h3>"+shopName+"</h3><hr/>"
+      +"<div><b>KH: "+order.tenKH+"</b> - "+order.id+" - "+fmtDate(order.ngay)+"</div><hr/>"
+      +"<table><thead><tr><th>#</th><th>Ten</th><th>SL</th><th>Gia</th><th>T.Tien</th></tr></thead><tbody>"+rows+"</tbody></table><hr/>"
+      +"<div class='tot'>Tong "+totalSP+" SP <span style='float:right'>"+fmt(order.tongTien)+"</span></div>"
+      +"</body></html>";
+    w.document.write(html);
+    w.document.close();setTimeout(()=>w.print(),300);
+  };
+
+  return(
+    <Modal onClose={onClose}>
+      <div ref={ref} style={{background:"white",padding:"16px 12px",borderRadius:8,marginBottom:12,border:"1px solid #e0e0e0"}}>
+        <div style={{textAlign:"center",marginBottom:10}}>
+          <Avatar user={{id:"shop",ten:shopName,avatar:shopAvatar||""}} size={60} style={{margin:"0 auto 6px"}}/>
+          <div style={{fontWeight:900,fontSize:15,color:"#1565C0",marginTop:4}}>{shopName}</div>
+          <div style={{borderBottom:"2px solid #333",margin:"8px 0"}}/>
+        </div>
+        <div style={{fontSize:12,marginBottom:8}}><b>KH: {order.tenKH}</b> · {order.id} · {fmtDate(order.ngay)}</div>
+        <div style={{borderTop:"1px dashed #888",marginBottom:6}}/>
+        <div style={{display:"grid",gridTemplateColumns:"22px 1fr 28px 46px 52px",fontSize:11,fontWeight:700,color:"#444",padding:"0 2px",marginBottom:4}}>
+          <span>#</span><span>Tên</span><span style={{textAlign:"center"}}>SL</span><span style={{textAlign:"right"}}>Đ.Giá</span><span style={{textAlign:"right"}}>T.Tiền</span>
+        </div>
+        <div style={{borderBottom:"1px dashed #aaa",marginBottom:4}}/>
+        {order.items?.map((it,i)=>(
+          <div key={i} style={{display:"grid",gridTemplateColumns:"22px 1fr 28px 46px 52px",fontSize:12,padding:"4px 2px",borderBottom:"1px solid #f0f0f0"}}>
+            <span style={{color:"#888"}}>{i+1}.</span>
+            <span style={{fontWeight:600}}>{it.ten}{it.ghiChu&&<span style={{fontSize:10,color:"#888",fontWeight:400}}> ({it.ghiChu})</span>}</span>
+            <span style={{textAlign:"center"}}>{it.sl}</span>
+            <span style={{textAlign:"right",color:"#555",fontSize:11}}>{fmt(it.gia)}</span>
+            <span style={{textAlign:"right",fontWeight:800,color:"#1565C0"}}>{fmt(it.gia*it.sl)}</span>
+          </div>
+        ))}
+        <div style={{borderTop:"1px dashed #888",margin:"6px 0"}}/>
+        <div style={{display:"flex",justifyContent:"space-between",fontWeight:900,fontSize:14}}>
+          <span>Tổng {totalSP} SP</span><span style={{color:"#1565C0"}}>{fmt(order.tongTien)}</span>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
+        <button onClick={doShare} style={{padding:"11px 0",borderRadius:10,border:"none",background:"#4CAF50",color:"white",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>🖼️ ẢNH</button>
+        <button onClick={doPDF} style={{padding:"11px 0",borderRadius:10,border:"none",background:"#F44336",color:"white",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>📄 PDF</button>
+        <button onClick={doZalo} style={{padding:"11px 0",borderRadius:10,border:"none",background:"#1565C0",color:"white",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>💬 ZALO</button>
+      </div>
+      <button onClick={onClose} style={{width:"100%",padding:"11px 0",borderRadius:10,border:"1px solid #ddd",background:"#f5f5f5",color:"#666",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>ĐÓNG</button>
+    </Modal>
+  );
+}
+
+/* ── ORDERS TAB ─────────────────────────────────────────────── */
+function OrdersTab({orders,setOrders,debts,setDebts,api,onEditOrder,currentUser}){
+  const [timeF,setTimeF]=useState("today");
+  const [doneTimeF,setDoneTimeF]=useState("today");
+  const [search,setSearch]=useState("");
+  const [sel,setSel]=useState(null);
+  const [toast,setToast]=useState("");
+  const [busyApprove,setBusyApprove]=useState(false);
+  const [printOrder,setPrintOrder]=useState(null);
+  const [invoiceOrder,setInvoiceOrder]=useState(null);
+  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(""),2500);};
+  const filtered=orders.filter(o=>{
+    const d=new Date(o.ngay),now=new Date();
+    if(timeF==="today"&&!sameDay(o.ngay)) return false;
+    if(timeF==="week"&&(now-d)/86400000>7) return false;
+    if(timeF==="month"&&(d.getMonth()!==now.getMonth()||d.getFullYear()!==now.getFullYear())) return false;
+    if(timeF==="year"&&d.getFullYear()!==now.getFullYear()) return false;
+    if(search){const q=search.toLowerCase();if(!o.tenKH.toLowerCase().includes(q)&&!o.items?.some(it=>it.ten.toLowerCase().includes(q))) return false;}
+    return true;
+  }).sort((a,b)=>new Date(b.ngay)-new Date(a.ngay));
+  const doneList=filtered.filter(o=>o.trangThai==="done");
+  const doneFiltered=useMemo(()=>orders.filter(o=>{
+    if(o.trangThai!=="done") return false;
+    const d=new Date(o.ngay),now=new Date();
+    if(doneTimeF==="today"&&!sameDay(o.ngay)) return false;
+    if(doneTimeF==="week"&&(now-d)/86400000>7) return false;
+    if(doneTimeF==="month"&&(d.getMonth()!==now.getMonth()||d.getFullYear()!==now.getFullYear())) return false;
+    return true;
+  }),[orders,doneTimeF]);
+  const doneBySrc=useMemo(()=>{
+    const m={};
+    doneFiltered.forEach(o=>o.items?.forEach(it=>{const src=it.nhom||"Khác";if(!m[src]) m[src]={sl:0,chi:0,thu:0,lai:0};m[src].sl+=it.sl;m[src].chi+=(it.von||0)*it.sl;m[src].thu+=it.gia*it.sl;m[src].lai+=(it.gia-(it.von||0))*it.sl;}));
+    return Object.entries(m).sort((a,b)=>b[1].thu-a[1].thu);
+  },[doneFiltered]);
+  const doneTotals=doneFiltered.reduce((a,o)=>({sl:a.sl+(o.items?.reduce((s,i)=>s+i.sl,0)||0),thu:a.thu+o.tongTien,lai:a.lai+(o.tongTien-o.tongVon)}),{sl:0,thu:0,lai:0});
+  const OCard=({o})=>(
+    <Card onClick={()=>setSel(o)} style={{padding:"12px 14px",border:`1.5px solid ${C.border}`,background:"white"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+        <div><div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}><span style={{fontWeight:800,fontSize:12,color:C.blue}}>{o.id}</span><Badge label="✅ Đã giao" color={C.green} bg={C.greenLight} size={10}/></div><div style={{fontWeight:700,fontSize:14,color:C.text}}>{o.tenKH}</div><div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{fmtDate(o.ngay)} · {o.items?.length||0} sp</div></div>
+        <div style={{textAlign:"right"}}><div style={{fontWeight:900,fontSize:16,color:C.blue}}>{fmt(o.tongTien)}</div><div style={{fontSize:11,color:C.green,fontWeight:600}}>+{fmt(o.tongTien-o.tongVon)} lãi</div></div>
+      </div>
+      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{o.items?.slice(0,3).map((it,i)=><span key={i} style={{background:C.divider,padding:"2px 8px",borderRadius:8,fontSize:11,color:C.textSec,fontWeight:600}}>{it.ten.length>12?it.ten.slice(0,12)+"…":it.ten} ×{it.sl}</span>)}{(o.items?.length||0)>3&&<span style={{fontSize:11,color:C.textMuted}}>+{o.items.length-3} sp</span>}</div>
+    </Card>
+  );
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",paddingBottom:80,fontFamily:font}}>
+      {printOrder&&<PrintModal data={printOrder} onClose={()=>setPrintOrder(null)}/>}
+      {invoiceOrder&&<InvoiceModal order={invoiceOrder} shopName={currentUser?.ten||"Cửa Hàng"} shopAvatar={currentUser?.avatar||""} onClose={()=>setInvoiceOrder(null)}/>}
+      <div style={{background:C.card,padding:"12px 14px",borderBottom:`1px solid ${C.divider}`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+          <div style={{fontWeight:800,fontSize:14,color:C.blue}}>📊 Tổng hợp đã giao</div>
+          <div style={{display:"flex",gap:4}}>{[["today","Hôm nay"],["week","7 ngày"],["month","Tháng"],["all","Tất cả"]].map(([v,l])=>(<button key={v} onClick={()=>setDoneTimeF(v)} style={{padding:"3px 8px",borderRadius:10,border:"none",cursor:"pointer",fontSize:10,fontWeight:700,fontFamily:font,background:doneTimeF===v?C.blue:C.divider,color:doneTimeF===v?"white":C.textSec}}>{l}</button>))}</div>
+        </div>
+        {doneBySrc.length===0?<div style={{fontSize:12,color:C.textMuted,textAlign:"center",padding:"6px 0"}}>Không có đơn</div>:<>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 40px 60px 60px 60px",gap:4,marginBottom:4,fontSize:10,color:C.textMuted,fontWeight:700,padding:"0 2px"}}><span>NGUỒN</span><span style={{textAlign:"right"}}>SL</span><span style={{textAlign:"right"}}>CHI</span><span style={{textAlign:"right"}}>THU</span><span style={{textAlign:"right",color:C.green}}>LÃI</span></div>
+          {doneBySrc.map(([src,s])=>(<div key={src} style={{display:"grid",gridTemplateColumns:"1fr 40px 60px 60px 60px",gap:4,padding:"4px 2px",borderTop:`1px solid ${C.divider}`,fontSize:12}}><span style={{fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{src}</span><span style={{textAlign:"right",color:C.textSec}}>{s.sl}</span><span style={{textAlign:"right",color:C.red,fontSize:11}}>{fmt(s.chi)}</span><span style={{textAlign:"right",color:C.blue,fontSize:11}}>{fmt(s.thu)}</span><span style={{textAlign:"right",color:C.green,fontWeight:700,fontSize:11}}>{fmt(s.lai)}</span></div>))}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 40px 60px 60px 60px",gap:4,padding:"5px 2px",borderTop:`2px solid ${C.border}`,fontSize:12,fontWeight:800}}><span>TỔNG</span><span style={{textAlign:"right"}}>{doneTotals.sl}</span><span style={{textAlign:"right",color:C.red}}>{fmt(doneBySrc.reduce((a,[,s])=>a+s.chi,0))}</span><span style={{textAlign:"right",color:C.blue}}>{fmt(doneTotals.thu)}</span><span style={{textAlign:"right",color:C.green}}>{fmt(doneTotals.lai)}</span></div>
+        </>}
+      </div>
+      <div style={{padding:"10px 12px",background:C.card,borderBottom:`1px solid ${C.divider}`}}>
+        <div style={{position:"relative",marginBottom:8}}><Inp value={search} onChange={setSearch} placeholder="🔍 Tìm tên khách hoặc sản phẩm..." style={{fontSize:13}}/>{search&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"#CBD5E1",border:"none",borderRadius:"50%",width:22,height:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>✕</button>}</div>
+        <div style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none"}}>{[["today","Hôm nay"],["week","7 ngày"],["month","Tháng này"],["year","Năm nay"],["all","Tất cả"]].map(([v,l])=>(<button key={v} onClick={()=>setTimeF(v)} style={{flexShrink:0,padding:"5px 12px",borderRadius:16,border:"none",cursor:"pointer",background:timeF===v?C.blue:C.divider,color:timeF===v?"white":C.textSec,fontWeight:timeF===v?700:500,fontSize:12,fontFamily:font}}>{l}</button>))}</div>
+      </div>
+      <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:8}}>
+        {doneList.map(o=><OCard key={o.id} o={o}/>)}
+        {doneList.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted}}><div style={{fontSize:40}}>📭</div><div style={{fontWeight:600,marginTop:8}}>Không có đơn trong khoảng này</div></div>}
+      </div>
+      {sel&&(
+        <Modal onClose={()=>setSel(null)}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}><div style={{fontWeight:800,fontSize:16,color:C.blue,flex:1}}>{sel.id}</div><Badge label="✅ Đã giao" color={C.green} bg={C.greenLight}/><button onClick={()=>setSel(null)} style={{background:C.divider,border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button></div>
+          <div style={{marginBottom:12}}><div style={{fontSize:11,color:C.textMuted}}>Khách hàng</div><div style={{fontWeight:800,fontSize:16,color:C.text}}>{sel.tenKH}</div><div style={{fontSize:12,color:C.textMuted,marginTop:2}}>{fmtDate(sel.ngay)}</div></div>
+          {sel.items?.map((it,i)=>(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"8px 0",borderBottom:`1px solid ${C.divider}`}}><div><div style={{fontWeight:700,color:C.text}}>{it.ten}{it.ghiChu&&<span style={{fontSize:11,color:C.textMuted}}> 📝 {it.ghiChu}</span>}</div><div style={{color:C.textSec,fontSize:12}}>{fmt(it.gia)} × {it.sl}</div></div><div style={{fontWeight:800,color:C.blue}}>{fmt(it.gia*it.sl)}</div></div>))}
+          <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0",marginBottom:10}}><div><div style={{fontWeight:800,fontSize:16}}>Tổng tiền</div><div style={{fontSize:12,color:C.green,fontWeight:600}}>Lợi nhuận: +{fmt(sel.tongTien-sel.tongVon)}</div></div><div style={{fontWeight:900,fontSize:20,color:C.blue}}>{fmt(sel.tongTien)}</div></div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <Btn onClick={async()=>{let orderToEdit=sel;if(api){try{const res=await api.get("getDonHang");if(res?.data){const fresh=res.data.find(o=>o.id===sel.id);if(fresh) orderToEdit=fresh;}}catch(e){}}onEditOrder(orderToEdit);setSel(null);}} color={C.blue} style={{flex:1}}>✏️ Sửa</Btn>
+            <Btn onClick={()=>{setInvoiceOrder(sel);setSel(null);}} outline color={C.blue} style={{flex:1}}>🖨️ In</Btn>
+            <Btn onClick={async()=>{if(!window.confirm("Xoá đơn "+sel.id+"?")) return;
+              const isDone=sel.trangThai==="done";
+              if(api){const res=await api.post("cancelOrder",{id:sel.id,maKH:sel.maKH||"",tenKH:sel.tenKH||"",tongTien:sel.tongTien||0,reversDebt:isDone&&sel.maKH!=="le"});if(res?.error) console.error("cancelOrder error:",res.error);}
+              setOrders(os=>os.filter(o=>o.id!==sel.id));
+              if(isDone&&sel.maKH!=="le"&&setDebts){setDebts(ds=>ds.filter(d=>d.maDon!==sel.id&&!(d.ghiChu||"").includes(sel.id)));}
+              setSel(null);notify("✅ Đã xoá đơn!");}} outline color={C.red} style={{flex:1}}>🗑️ Xoá</Btn>
+          </div>
+        </Modal>
+      )}
+      <Toast msg={toast}/>
+    </div>
+  );
+}
+
+/* ── DEBT TAB ───────────────────────────────────────────────── */
+/* ── AUTOCOMPLETE KHÁCH HÀNG (dùng chung tab Bán + tab Nợ) ──── */
+// walkIn: thêm lựa chọn "Khách lẻ" (id "le") ở đầu danh sách — dùng cho tab Bán
+function AutocompleteKH({customers,value,onChange,placeholder="🔍 Tìm khách hàng...",walkIn=false,inputStyle={}}){
+  const [open,setOpen]=useState(false);
+  const [q,setQ]=useState("");
+  const ALL=walkIn?[{id:"le",ten:"Khách lẻ",username:"",avatar:""},...customers]:customers;
+  const sel=ALL.find(k=>k.id===value)||(walkIn?ALL[0]:null);
+  const filtered=ALL.filter(k=>!q||k.ten.toLowerCase().includes(q.toLowerCase())||(k.username||"").toLowerCase().includes(q.toLowerCase()));
+  return(
+    <div style={{position:"relative",flex:1,minWidth:0}}>
+      <input value={open?q:(sel?sel.ten:"")} onChange={e=>{setQ(e.target.value);if(!open)setOpen(true);}}
+        onFocus={()=>{setOpen(true);setQ("");}} onBlur={()=>setTimeout(()=>setOpen(false),200)}
+        placeholder={placeholder}
+        style={{width:"100%",padding:"8px 10px",borderRadius:10,border:"none",fontSize:13,fontFamily:font,outline:"none",boxSizing:"border-box",...inputStyle}}/>
+      {open&&(
+        <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"white",borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,0.18)",zIndex:200,maxHeight:220,overflowY:"auto"}}>
+          {filtered.length===0&&<div style={{padding:"10px 12px",fontSize:13,color:C.textMuted}}>Không có khách</div>}
+          {filtered.map(k=>(
+            <div key={k.id} onMouseDown={()=>{onChange(k.id);setOpen(false);setQ("");}}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",cursor:"pointer",borderBottom:`1px solid ${C.divider}`,background:value===k.id?C.blueLight:"white"}}>
+              {k.id==="le"?<span style={{fontSize:18,width:28,textAlign:"center"}}>👤</span>:<Avatar user={k} size={28}/>}
+              <div><div style={{fontWeight:600,fontSize:13,color:C.text}}>{k.ten}</div>{k.username&&<div style={{fontSize:11,color:C.textMuted}}>@{k.username}</div>}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DebtTab({customers,debts,setDebts,api,role,currentUser}){
+  const debtPrintRef=useRef(null);
+  const debtShareRef=useRef(null);
+  const [selKH,setSelKH]=useState("");const [amount,setAmount]=useState("");
+  const [toast,setToast]=useState("");const [detail,setDetail]=useState(null);
+  const [busyDebt,setBusyDebt]=useState(false);
+  const isSeller=role==="seller";
+  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(""),2500);};
+  const visibleDebts=isSeller?debts:debts.filter(d=>d.maKH===currentUser?.id);
+  const debtMap=useMemo(()=>{
+    const m={};
+    visibleDebts.forEach(d=>{
+      if(!m[d.maKH]) m[d.maKH]={maKH:d.maKH,ten:d.tenKH,total:0,last:d.ngay,items:[]};
+      m[d.maKH].total+=(d.loai==="no"?d.soTien:-d.soTien);
+      if(new Date(d.ngay)>new Date(m[d.maKH].last)) m[d.maKH].last=d.ngay;
+      m[d.maKH].items.push(d);
+    });
+    return m;
+  },[visibleDebts]);
+  const allList=Object.values(debtMap).sort((a,b)=>Math.abs(b.total)-Math.abs(a.total));
+  const oweList=allList.filter(d=>d.total>0);const creditList=allList.filter(d=>d.total<0);const clearList=allList.filter(d=>d.total===0);
+  const tongNo=oweList.reduce((a,x)=>a+x.total,0);const tongDu=creditList.reduce((a,x)=>a+Math.abs(x.total),0);
+  const addDebtFn=async(loai)=>{
+    if(busyDebt) return;
+    const amt=parseFloat(String(amount).replace(/[^0-9.]/g,""))||0;
+    if(!selKH||amt<=0){notify("⚠️ Chọn KH và nhập số tiền!");return;}
+    setBusyDebt(true);
+    const kh=customers.find(c=>c.id===selKH);
+    const d={id:genId("CN"),maKH:selKH,tenKH:kh?.ten||selKH,loai,soTien:amt,ngay:nowISO(),ghiChu:loai==="thu"?"Thu tiền":"Ghi nợ",maDon:""};
+    if(api) await api.post("addDebt",d).catch(()=>{});
+    setDebts(ds=>[d,...ds]);setAmount("");notify(loai==="thu"?"✅ Đã thu!":"✅ Đã ghi nợ!");setBusyDebt(false);
+  };
+  const addDebtFromDetail=async(loai)=>{
+    if(busyDebt) return;
+    const amt=parseFloat(String(detail.editAmount||0).replace(/[^0-9.]/g,""))||0;
+    if(amt<=0){notify("⚠️ Nhập số tiền!");return;}
+    setBusyDebt(true);
+    const d={id:genId("CN"),maKH:detail.maKH,tenKH:detail.ten,loai,soTien:amt,ngay:nowISO(),ghiChu:loai==="thu"?"Thu tiền":"Ghi nợ",maDon:""};
+    if(api) await api.post("addDebt",d).catch(()=>{});
+    setDebts(ds=>[d,...ds]);
+    setDetail(prev=>({...prev,total:prev.total+(loai==="no"?amt:-amt),items:[d,...prev.items],editAmount:""}));
+    notify(loai==="thu"?"✅ Đã thu!":"✅ Đã ghi nợ!");setBusyDebt(false);
+  };
+  const DC=({d})=>{const isO=d.total>0,isC=d.total<0;const cust=customers.find(x=>x.id===d.maKH);return(
+    <Card onClick={async()=>{
+      let freshItems=d.items||[];
+      if(api){try{const res=await api.get("getCongNo");if(res?.data) freshItems=res.data.filter(x=>x.maKH===d.maKH);}catch(e){}}
+      const ct=freshItems.reduce((a,t)=>a+(t.loai==="no"?t.soTien:-t.soTien),0)||0;
+      setDetail({...d,items:freshItems,editAmount:ct>0?String(Math.round(ct)):String(0),shopName:currentUser?.ten||''});
+    }} style={{padding:"12px 14px",border:`1.5px solid ${isO?C.redLight:isC?"#bbf7d0":C.border}`}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0}}>
+          <Avatar user={{id:d.maKH,ten:d.ten,avatar:cust?.avatar||""}} size={40}/>
+          <div style={{minWidth:0}}><div style={{fontWeight:800,fontSize:15,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.ten}</div><div style={{fontSize:12,color:C.textMuted}}>GD cuối: {fmtDate(d.last)}</div></div>
+        </div>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          {isO&&<div style={{fontWeight:900,fontSize:15,color:C.red}}>{fmt(d.total)}</div>}
+          {isC&&<div style={{fontWeight:900,fontSize:15,color:C.green}}>+{fmt(Math.abs(d.total))}</div>}
+          {!isO&&!isC&&<div style={{fontSize:13,color:C.textMuted}}>✅</div>}
+        </div>
+      </div>
+    </Card>
+  );};
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",paddingBottom:80,fontFamily:font}}>
+      <div style={{background:`linear-gradient(135deg,${C.blue},${C.teal})`,padding:"16px 14px"}}>
+        <div style={{display:"flex",gap:10,marginBottom:10}}>
+          <div style={{flex:1,background:"rgba(255,255,255,0.18)",borderRadius:14,padding:"10px 12px"}}><div style={{color:"rgba(255,255,255,0.8)",fontSize:11,fontWeight:700,marginBottom:2}}>⚠️ TỔNG NỢ</div><div style={{fontWeight:900,color:"white",fontSize:22,letterSpacing:-0.5}}>{fmt(tongNo)}</div><div style={{color:"rgba(255,255,255,0.7)",fontSize:11,marginTop:2}}>{oweList.length} khách còn nợ</div></div>
+          {tongDu>0&&<div style={{flex:1,background:"rgba(255,255,255,0.18)",borderRadius:14,padding:"10px 12px"}}><div style={{color:"rgba(255,255,255,0.8)",fontSize:11,fontWeight:700,marginBottom:2}}>💚 TỔNG DƯ TIỀN</div><div style={{fontWeight:900,color:"white",fontSize:22,letterSpacing:-0.5}}>{fmt(tongDu)}</div><div style={{color:"rgba(255,255,255,0.7)",fontSize:11,marginTop:2}}>{creditList.length} khách dư</div></div>}
+        </div>
+        {isSeller&&<div style={{background:"rgba(255,255,255,0.12)",borderRadius:12,padding:"10px 12px"}}>
+          <div style={{fontSize:12,color:"rgba(255,255,255,0.8)",fontWeight:700,marginBottom:8}}>⚡ LẬP PHIẾU NHANH</div>
+          <AutocompleteKH customers={customers} value={selKH} onChange={id=>{setSelKH(id);if(id&&debtMap[id]&&debtMap[id].total>0) setAmount(String(debtMap[id].total));else setAmount("");}} placeholder="🔍 Tìm khách hàng..."/>
+          <div style={{height:6}}/>
+          <div style={{display:"flex",gap:8}}><MoneyInput value={amount} onChange={setAmount} placeholder="Số tiền..." style={{flex:1}}/><Btn onClick={()=>addDebtFn("thu")} color={C.green} disabled={busyDebt}>💵 Thu</Btn><Btn onClick={()=>addDebtFn("no")} color={C.red} disabled={busyDebt}>📌 Nợ</Btn></div>
+        </div>}
+      </div>
+      <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:8}}>
+        {oweList.length>0&&<><div style={{fontSize:11,color:C.textMuted,fontWeight:700,padding:"4px 2px",letterSpacing:0.5}}>⚠️ CÒN NỢ ({oweList.length})</div>{oweList.map(d=><DC key={d.maKH} d={d}/>)}</>}
+        {creditList.length>0&&<><div style={{fontSize:11,color:C.green,fontWeight:700,padding:"8px 2px 4px",letterSpacing:0.5}}>💚 DƯ TIỀN ({creditList.length})</div>{creditList.map(d=><DC key={d.maKH} d={d}/>)}</>}
+        {clearList.length>0&&<><div style={{fontSize:11,color:C.textMuted,fontWeight:700,padding:"8px 2px 4px",letterSpacing:0.5}}>✅ ĐÃ THANH TOÁN ({clearList.length})</div>{clearList.map(d=><DC key={d.maKH} d={d}/>)}</>}
+        {allList.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted}}><div style={{fontSize:40}}>💰</div><div style={{fontWeight:600,marginTop:8}}>Chưa có công nợ</div></div>}
+      </div>
+      {detail&&(()=>{
+        const shopName    = currentUser?.ten||"Cửa Hàng";
+        const shopAvatar  = currentUser?.avatar||"";
+        const computedTotal = detail.items.reduce((a,d)=>a+(d.loai==="no"?d.soTien:-d.soTien),0);
+        const isOC=computedTotal>0, isCC=computedTotal<0;
+        const sorted = [...detail.items].sort((a,b)=>new Date(a.ngay)-new Date(b.ngay));
+        let running=0;
+        const withBalance = sorted.map(t=>{
+          running += t.loai==="no" ? t.soTien : -t.soTien;
+          return {...t, balance:running};
+        }).reverse();
+
+        // Mô tả từng giao dịch — luôn hiện mã đơn nếu có
+        const getDesc=(t)=>{
+          return (t.ghiChu||t.maDon||"").trim();
+        };
+
+        const doShare=async()=>{
+          if(!window.html2canvas||!debtShareRef.current) return;
+          const canvas=await window.html2canvas(debtShareRef.current,{scale:2,useCORS:true,backgroundColor:"#fff"});
+          canvas.toBlob(async(blob)=>{
+            if(navigator.share&&navigator.canShare){
+              const file=new File([blob],`no-${detail.ten}.jpg`,{type:"image/jpeg"});
+              if(navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"Công nợ "+detail.ten,text:"Quý khách vui lòng kiểm tra kỹ :mã ,tên hàng, số lượng, giá. Trước khi thanh toán!"});return;}catch(e){if(e.name==="AbortError") return;}}
+            }
+            const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`no-${detail.ten}.jpg`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+          },"image/jpeg",0.9);
+        };
+
+        // Layout receipt dùng chung cho modal và share
+        const ReceiptContent=({forShare})=>(
+          <div style={{background:"white",padding:"16px 12px",borderRadius:forShare?0:0}}>
+            {/* Avatar + tên shop */}
+            <div style={{textAlign:"center",marginBottom:10}}>
+              <Avatar user={{id:"shop",ten:shopName,avatar:shopAvatar}} size={forShare?56:64} style={{margin:"0 auto 6px"}}/>
+              <div style={{fontWeight:900,fontSize:forShare?16:18,color:C.blue}}>{shopName}</div>
+              <div style={{borderBottom:"2px solid #222",margin:"8px 0"}}/>
+            </div>
+            {/* KH + tổng nợ */}
+            <div style={{marginBottom:8}}>
+              <div style={{fontSize:13,color:C.text,marginBottom:4}}>
+                <b>KH: {detail.ten}</b> · {new Date().toLocaleDateString("vi")}
+              </div>
+              <div style={{display:"flex",alignItems:"baseline",gap:8}}>
+                <span style={{fontWeight:900,fontSize:28,color:isOC?C.red:isCC?C.green:C.textMuted,letterSpacing:-0.5}}>
+                  {fmt(Math.abs(computedTotal))}
+                </span>
+                <span style={{fontSize:12,fontWeight:700,color:isOC?C.red:isCC?C.green:C.textMuted}}>
+                  {isOC?"⚠️ Còn nợ":isCC?"💚 Dư tiền":"✅ Đã xong"}
+                </span>
+              </div>
+            </div>
+            <div style={{borderTop:"1px dashed #aaa",marginBottom:6}}/>
+            {/* Header bảng */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 72px 58px",fontSize:11,fontWeight:700,color:"#555",padding:"0 2px",marginBottom:4}}>
+              <span>Giao dịch</span>
+              <span style={{textAlign:"right"}}>Ngày</span>
+              <span style={{textAlign:"right"}}>Số tiền</span>
+            </div>
+            <div style={{borderBottom:"1px dashed #aaa",marginBottom:4}}/>
+            {/* Các dòng giao dịch */}
+            {withBalance.map((t,i)=>{
+              const isNo=t.loai==="no";
+              return(
+                <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 72px 58px",padding:"7px 2px",borderBottom:"1px solid #f0f0f0",alignItems:"center"}}>
+                  <div>
+                    <div style={{fontWeight:800,fontSize:13,color:isNo?C.red:C.green}}>
+                      {isNo?"📌 Ghi nợ":"💵 Thu tiền"}
+                    </div>
+                    <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>{getDesc(t)}</div>
+                  </div>
+                  <div style={{textAlign:"right",fontSize:11,color:C.textMuted}}>{fmtDate(t.ngay)}</div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontWeight:800,fontSize:13,color:isNo?C.red:C.green}}>
+                      {isNo?"+":"-"}{fmt(t.soTien)}
+                    </div>
+                    <div style={{fontSize:9,color:C.textMuted}}>
+                      {t.balance>0?"Nợ ":"Dư "}<span style={{fontWeight:700,color:t.balance>0?C.red:C.green}}>{fmt(Math.abs(t.balance))}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+
+        return(
+          <Modal onClose={()=>setDetail(null)}>
+            {/* View chi tiết */}
+            <ReceiptContent forShare={false}/>
+
+            {/* Nút chia sẻ */}
+            <button onClick={doShare} style={{width:"100%",padding:"12px 0",borderRadius:10,border:"none",background:"#4CAF50",color:"white",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:font,margin:"10px 0 6px"}}>🖼️ Chia sẻ ảnh</button>
+            <button onClick={()=>setDetail(null)} style={{width:"100%",padding:"11px 0",borderRadius:10,border:"1px solid #ddd",background:"#f5f5f5",color:"#666",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:font}}>ĐÓNG</button>
+
+            {/* Form thu/ghi nợ nhanh */}
+            {isSeller&&<div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
+              <MoneyInput value={detail.editAmount||""} onChange={v=>setDetail(d=>({...d,editAmount:v}))} placeholder="Số tiền..."/>
+              <div style={{display:"flex",gap:8}}>
+                <Btn onClick={()=>addDebtFromDetail("thu")} color={C.green} style={{flex:1}} disabled={busyDebt}>{busyDebt?"⏳...":"💵 Thu tiền"}</Btn>
+                <Btn onClick={()=>addDebtFromDetail("no")}  color={C.red}   style={{flex:1}} disabled={busyDebt}>{busyDebt?"⏳...":"📌 Ghi nợ"}</Btn>
+              </div>
+            </div>}
+
+            {/* Hidden share div — giống hệt view chi tiết */}
+            <div ref={debtShareRef} style={{position:"fixed",left:-9999,top:0,zIndex:-1,width:340}}>
+              <ReceiptContent forShare={true}/>
+            </div>
+          </Modal>
+        );
+      })()}    <Toast msg={toast}/>
+    </div>
+  );
+}
+
+/* ── CUSTOMERS TAB ──────────────────────────────────────────── */
+function CustomersTab({customers,setCustomers,orders,debts,api}){
+  const [showAdd,setShowAdd]=useState(false);const [form,setForm]=useState({ten:"",username:"",password:"",sdt:""});
+  const [toast,setToast]=useState("");const [busySave,setBusySave]=useState(false);
+  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(""),2000);};
+  const save=async()=>{if(busySave) return;if(!form.ten||!form.username||!form.password){notify("⚠️ Nhập đầy đủ!");return;}if(customers.find(c=>c.username===form.username)){notify("⚠️ Tên đăng nhập đã tồn tại!");return;}setBusySave(true);try{const kh={...form,id:genId("KH"),loai:"customer",avatar:""};if(api) await api.post("addCustomer",kh);setCustomers(cs=>[...cs,kh]);setForm({ten:"",username:"",password:"",sdt:""});setShowAdd(false);notify("✅ Đã thêm!");}finally{setBusySave(false);}};
+  const getStats=(id)=>{const myO=orders.filter(o=>o.maKH===id),myD=debts.filter(d=>d.maKH===id);return{orders:myO.length,tongTien:myO.reduce((a,o)=>a+o.tongTien,0),conNo:Math.max(0,myD.reduce((a,d)=>a+(d.loai==="no"?d.soTien:-d.soTien),0))};};
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",fontFamily:font}}>
+      <div style={{background:`linear-gradient(135deg,${C.blue},${C.teal})`,padding:"14px 16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}><div><div style={{color:"white",fontWeight:800,fontSize:17}}>👥 Khách Hàng</div><div style={{color:"rgba(255,255,255,0.75)",fontSize:12,marginTop:2}}>{customers.length} khách</div></div><Btn sm onClick={()=>setShowAdd(true)} style={{background:"white",color:C.blue,border:"none"}}>+ Thêm KH</Btn></div>
+      <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:8}}>
+        {customers.map(kh=>{const s=getStats(kh.id);return(<Card key={kh.id} style={{padding:14}}><div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}><Avatar user={kh} size={44}/><div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:15,color:C.text,marginBottom:1}}>{kh.ten}</div><div style={{fontSize:12,color:C.textMuted}}>@{kh.username}{kh.sdt?` · ${kh.sdt}`:""}</div></div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>{[[s.orders+"","Đơn","📦",C.blue],[fmt(s.tongTien),"Doanh thu","💰",C.green],[fmt(s.conNo),"Còn nợ","⚠️",s.conNo>0?C.red:C.textMuted]].map(([v,l,ic,c])=>(<div key={l} style={{background:C.divider,borderRadius:10,padding:"8px 4px",textAlign:"center"}}><div style={{fontSize:15}}>{ic}</div><div style={{fontWeight:800,fontSize:12,color:c,marginTop:2}}>{v}</div><div style={{fontSize:10,color:C.textMuted}}>{l}</div></div>))}</div></Card>);})}
+        {customers.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted}}><div style={{fontSize:40}}>👥</div><div style={{fontWeight:600,marginTop:8}}>Chưa có khách hàng</div></div>}
+      </div>
+      {showAdd&&<Modal onClose={()=>setShowAdd(false)}><ModalHeader title="➕ Thêm khách hàng" onClose={()=>setShowAdd(false)}/>{[["ten","Họ tên *","text"],["username","Tên đăng nhập *","text"],["password","Mật khẩu *","password"],["sdt","Số điện thoại","tel"]].map(([k,lb,t])=>(<div key={k} style={{marginBottom:10}}><div style={{fontSize:12,color:C.textMuted,fontWeight:600,marginBottom:4}}>{lb}</div><Inp value={form[k]} onChange={v=>setForm(f=>({...f,[k]:v}))} placeholder={lb} type={t}/></div>))}<Btn onClick={save} color={C.blue} full disabled={busySave}>{busySave?"⏳...":"✅ Thêm khách hàng"}</Btn></Modal>}
+      <Toast msg={toast}/>
+    </div>
+  );
+}
+
+/* ── SHOP TAB ────────────────────────────────────────────────── */
+function ShopTab({products,currentUser,setOrders,api}){
+  const [search,setSearch]=useState("");const [nhom,setNhom]=useState("Tất cả");const [cart,setCart]=useState({});const [toast,setToast]=useState("");const [showCart,setShowCart]=useState(false);const [busyOrder,setBusyOrder]=useState(false);
+  const nhomList=["Tất cả",...new Set(products.map(p=>p.nhom).filter(Boolean))];
+  const filtered=products.filter(p=>p.ten&&p.ten.trim()&&(nhom==="Tất cả"||p.nhom===nhom)&&(search===""||p.ten.toLowerCase().includes(search.toLowerCase())));
+  const cartProds=products.filter(p=>cart[p.id]>0);const total=cartProds.reduce((a,p)=>a+p.gia*(cart[p.id]||0),0);const totalQty=Object.values(cart).reduce((a,b)=>a+b,0);
+  const add=(p)=>setCart(c=>({...c,[p.id]:Math.min(999,(c[p.id]||0)+1)}));const dec=(p)=>setCart(c=>({...c,[p.id]:Math.max(0,(c[p.id]||0)-1)}));
+  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(""),2500);};
+  const order=async()=>{if(busyOrder) return;if(totalQty===0){notify("⚠️ Chưa chọn sản phẩm!");return;}setBusyOrder(true);try{const id=genId("DH");const o={id,maKH:currentUser.id,tenKH:currentUser.ten,ngay:nowISO(),trangThai:"pending",tongTien:total,tongVon:cartProds.reduce((a,p)=>a+(p.von||0)*(cart[p.id]||0),0),items:cartProds.map(p=>({maSP:p.id,ten:p.ten,nhom:p.nhom||"",sl:cart[p.id],gia:p.gia,von:p.von||0}))};if(api) await api.post("createOrder",o);setOrders(os=>[o,...os]);setCart({});setShowCart(false);notify("✅ Đặt hàng thành công!");}finally{setBusyOrder(false);}};
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",paddingBottom:80,fontFamily:font}}>
+      <div style={{background:`linear-gradient(135deg,${C.blue},${C.teal})`,padding:"14px 12px",display:"flex",alignItems:"center",gap:10}}>
+        <div style={{flex:1}}><div style={{color:"white",fontWeight:800,fontSize:17}}>🛍 Mua hàng</div></div>
+        {totalQty>0&&<button onClick={()=>setShowCart(true)} style={{background:"white",color:C.blue,border:"none",borderRadius:20,padding:"6px 14px",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:font,display:"flex",alignItems:"center",gap:6}}>🛒 <span style={{background:C.blue,color:"white",borderRadius:10,minWidth:20,height:20,padding:"0 6px",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,boxSizing:"border-box"}}>{totalQty}</span> {fmt(total)}</button>}
+        <div style={{position:"relative",flex:1}}><Inp value={search} onChange={setSearch} placeholder="🔍 Tìm sản phẩm..." style={{background:"rgba(255,255,255,0.92)",border:"none"}}/>{search&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"rgba(100,116,139,0.25)",border:"none",borderRadius:"50%",width:22,height:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11}}>✕</button>}</div>
+      </div>
+      <div style={{padding:"8px 12px",background:C.card,borderBottom:`1px solid ${C.divider}`}}><Pills options={nhomList} value={nhom} onChange={setNhom}/></div>
+      <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
+        {filtered.map(p=>{const qty=cart[p.id]||0;return(<div key={p.id} style={{background:C.card,borderRadius:14,padding:"12px 14px",display:"flex",alignItems:"center",gap:12,boxShadow:C.shadow}}><div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,color:C.text}}>{p.ten}</div><div style={{display:"flex",alignItems:"center",gap:6,marginTop:2}}><div style={{fontSize:13,color:C.blue,fontWeight:800}}>{fmt(p.gia)}</div>{p.nhan&&<div style={{fontSize:11,color:C.textMuted,fontStyle:"italic"}}>{p.nhan}</div>}</div></div>{qty===0?<button onClick={()=>add(p)} style={{background:C.blue,color:"white",border:"none",borderRadius:"50%",width:34,height:34,cursor:"pointer",fontSize:20,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</button>:<div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}><button onClick={()=>dec(p)} style={{background:"#E2E8F0",border:"none",borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button><span style={{fontWeight:800,color:C.blue,minWidth:24,textAlign:"center",fontSize:16}}>{qty}</span><button onClick={()=>add(p)} style={{background:C.green,color:"white",border:"none",borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div>}</div>);})}
+      </div>
+      {showCart&&<Modal onClose={()=>setShowCart(false)} fullBottom><ModalHeader title="🛒 Giỏ hàng" onClose={()=>setShowCart(false)}/>{cartProds.map(p=>(<div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.divider}`}}><div style={{flex:1}}><div style={{fontWeight:700,fontSize:14,color:C.text}}>{p.ten}</div><div style={{fontSize:13,color:C.blue,fontWeight:700}}>{fmt(p.gia)} × {cart[p.id]}</div></div><div style={{display:"flex",alignItems:"center",gap:8}}><button onClick={()=>dec(p)} style={{width:28,height:28,borderRadius:"50%",border:"none",background:"#E2E8F0",cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button><span style={{fontWeight:800,color:C.blue,minWidth:20,textAlign:"center"}}>{cart[p.id]}</span><button onClick={()=>add(p)} style={{width:28,height:28,borderRadius:"50%",border:"none",background:C.green,color:"white",cursor:"pointer",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button></div><div style={{fontWeight:800,color:C.blue,minWidth:60,textAlign:"right"}}>{fmt(p.gia*cart[p.id])}</div></div>))}<div style={{display:"flex",justifyContent:"space-between",padding:"12px 0",marginBottom:12,borderTop:`2px solid ${C.divider}`}}><span style={{fontWeight:800,fontSize:16}}>Tổng cộng</span><span style={{fontWeight:900,fontSize:18,color:C.blue}}>{fmt(total)}</span></div><Btn onClick={order} color={C.blue} full disabled={busyOrder}>{busyOrder?"⏳ Đang gửi...":"📋 Gửi đơn đặt hàng"}</Btn></Modal>}
+      <Toast msg={toast}/>
+    </div>
+  );
+}
+
+/* ── MY ORDERS TAB ───────────────────────────────────────────── */
+function MyOrdersTab({orders,currentUser}){
+  const mine=orders.filter(o=>o.maKH===currentUser.id).sort((a,b)=>new Date(b.ngay)-new Date(a.ngay));
+  const [sel,setSel]=useState(null);
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",paddingBottom:80,fontFamily:font}}>
+      <div style={{background:`linear-gradient(135deg,${C.blue},${C.teal})`,padding:"14px 16px"}}><div style={{color:"white",fontWeight:800,fontSize:17}}>📋 Đơn hàng của tôi</div><div style={{color:"rgba(255,255,255,0.75)",fontSize:12,marginTop:2}}>{mine.length} đơn</div></div>
+      <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:8}}>
+        {mine.map(o=>(<Card key={o.id} onClick={()=>setSel(o)} style={{padding:"12px 14px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}><div><div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}><span style={{fontWeight:800,fontSize:12,color:C.blue}}>{o.id}</span><Badge label={o.trangThai==="done"?"✅ Đã giao":"⏳ Chờ"} color={o.trangThai==="done"?C.green:C.orange} bg={o.trangThai==="done"?C.greenLight:C.orangeLight} size={10}/></div><div style={{fontSize:11,color:C.textMuted}}>{fmtDate(o.ngay)} · {o.items?.length||0} sp</div></div><div style={{fontWeight:900,fontSize:16,color:C.blue}}>{fmt(o.tongTien)}</div></div><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{o.items?.slice(0,3).map((it,i)=><span key={i} style={{background:C.divider,padding:"2px 8px",borderRadius:8,fontSize:11,color:C.textSec,fontWeight:600}}>{it.ten.length>12?it.ten.slice(0,12)+"…":it.ten} ×{it.sl}</span>)}</div></Card>))}
+        {mine.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted}}><div style={{fontSize:40}}>📦</div><div style={{fontWeight:600,marginTop:8}}>Chưa có đơn hàng</div></div>}
+      </div>
+      {sel&&<Modal onClose={()=>setSel(null)}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}><div style={{fontWeight:800,fontSize:16,color:C.blue,flex:1}}>{sel.id}</div><Badge label={sel.trangThai==="done"?"✅ Đã giao":"⏳ Chờ"} color={sel.trangThai==="done"?C.green:C.orange} bg={sel.trangThai==="done"?C.greenLight:C.orangeLight}/><button onClick={()=>setSel(null)} style={{background:C.divider,border:"none",borderRadius:"50%",width:32,height:32,cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button></div>{sel.items?.map((it,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.divider}`}}><div><div style={{fontWeight:700,color:C.text}}>{it.ten}</div><div style={{fontSize:12,color:C.textSec}}>{fmt(it.gia)} × {it.sl}</div></div><div style={{fontWeight:800,color:C.blue}}>{fmt(it.gia*it.sl)}</div></div>)}<div style={{display:"flex",justifyContent:"space-between",padding:"10px 0"}}><span style={{fontWeight:800,fontSize:16}}>Tổng tiền</span><span style={{fontWeight:900,fontSize:20,color:C.blue}}>{fmt(sel.tongTien)}</span></div></Modal>}
+    </div>
+  );
+}
+
+/* ── CUSTOMER PROFILE ────────────────────────────────────────── */
+function CustomerProfile({currentUser,onLogout,onUpdateUser,orders,debts,api}){
+  const [showPicker,setShowPicker]=useState(false);const [saving,setSaving]=useState(false);
+  const mine=orders.filter(o=>o.maKH===currentUser.id);const myDebts=debts.filter(d=>d.maKH===currentUser.id);
+  const conNo=Math.max(0,myDebts.reduce((a,d)=>a+(d.loai==="no"?d.soTien:-d.soTien),0));
+  const tongMua=mine.filter(o=>o.trangThai==="done").reduce((a,o)=>a+o.tongTien,0);
+  const saveAvatar=async(emoji)=>{avatarCache.set(currentUser.id,emoji);const updated={...currentUser,avatar:emoji};onUpdateUser(updated);setShowPicker(false);setSaving(true);try{if(api) await api.post("updateUser",{id:currentUser.id,ten:currentUser.ten,sdt:currentUser.sdt||"",avatar:emoji});}catch(e){}finally{setSaving(false);}};
+  return(
+    <div style={{background:C.bg,minHeight:"100vh",paddingBottom:80,fontFamily:font}}>
+      {showPicker&&<AvatarPicker current={currentUser.avatar||""} onSelect={saveAvatar} onClose={()=>setShowPicker(false)}/>}
+      <div style={{background:`linear-gradient(135deg,${C.blue},${C.teal})`,padding:"30px 20px 40px",textAlign:"center"}}>
+        <div style={{position:"relative",display:"inline-block",marginBottom:12}} onClick={()=>setShowPicker(true)}>
+          <Avatar user={currentUser} size={84} style={{border:"3px solid rgba(255,255,255,0.6)",cursor:"pointer"}}/>
+          <div style={{position:"absolute",bottom:2,right:0,width:24,height:24,borderRadius:"50%",background:"white",border:`2px solid ${C.blue}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,boxShadow:"0 2px 6px rgba(0,0,0,0.25)",pointerEvents:"none"}}>📷</div>
+        </div>
+        <div style={{color:"white",fontWeight:900,fontSize:20}}>{currentUser.ten}</div>
+        <div style={{color:"rgba(255,255,255,0.75)",fontSize:13,marginTop:4}}>@{currentUser.username}</div>
+        {saving&&<div style={{color:"rgba(255,255,255,0.8)",fontSize:11,marginTop:6}}>⏳ Đang lưu...</div>}
+      </div>
+      <div style={{margin:"-20px 16px 16px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,position:"relative"}}>
+        {[[mine.length,"Đơn hàng","📦",C.blue],[fmt(tongMua),"Đã mua","💰",C.green],[fmt(conNo),"Còn nợ","⚠️",conNo>0?C.red:C.textMuted]].map(([v,l,ic,c])=>(<div key={l} style={{background:C.card,borderRadius:14,padding:"12px 8px",textAlign:"center",boxShadow:C.shadowMd}}><div style={{fontSize:20}}>{ic}</div><div style={{fontWeight:900,fontSize:14,color:c,marginTop:4}}>{v}</div><div style={{fontSize:10,color:C.textMuted}}>{l}</div></div>))}
+      </div>
+      <div style={{margin:"0 16px"}}>
+        <Card style={{padding:0,overflow:"hidden",marginBottom:14}}>
+          {[["👤","Họ tên",currentUser.ten],["🔑","Tài khoản",currentUser.username],["📞","Số điện thoại",currentUser.sdt||"—"]].map(([ic,l,v])=>(<div key={l} style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:`1px solid ${C.divider}`}}><span style={{fontSize:18}}>{ic}</span><div style={{flex:1}}><div style={{fontSize:11,color:C.textMuted,fontWeight:600}}>{l}</div><div style={{fontWeight:700,fontSize:14,color:C.text}}>{v}</div></div></div>))}
+          <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px"}}><span style={{fontSize:18}}>🖼️</span><div style={{flex:1}}><div style={{fontSize:11,color:C.textMuted,fontWeight:600}}>Avatar</div><div style={{fontWeight:700,fontSize:14,color:C.text}}>{currentUser.avatar?.startsWith("data:")?"Ảnh từ máy":currentUser.avatar?"Emoji":"Chữ cái tên"}</div></div><button onClick={()=>setShowPicker(true)} style={{background:C.blueLight,color:C.blue,border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font}}>Đổi avatar</button></div>
+        </Card>
+        <button onClick={onLogout} style={{width:"100%",padding:14,borderRadius:14,border:`2px solid ${C.red}`,background:"transparent",color:C.red,fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:font}}>🚪 Đăng xuất</button>
+      </div>
+    </div>
+  );
+}
+
+const avatarCache={
+  get:(id)=>{try{return JSON.parse(localStorage.getItem("av_"+id)||'""');}catch{return "";}},
+  set:(id,v)=>{try{localStorage.setItem("av_"+id,JSON.stringify(v));}catch{}},
+};
+
+/* ── APP ─────────────────────────────────────────────────────── */
+function App(){
+  const [scriptUrl,setScriptUrlRaw]=useState(()=>ls("scriptUrl",""));
+  const setScriptUrl=(u)=>{setScriptUrlRaw(u);lsSet("scriptUrl",u);};
+  const api=useMemo(()=>scriptUrl?createApi(scriptUrl):null,[scriptUrl]);
+  const [userRaw,setUserRaw]=useState(()=>ls("session",null));
+  const setUser=(u)=>{setUserRaw(u);if(u)lsSet("session",u);else localStorage.removeItem("session");};
+  const user=userRaw;
+  // Local mode: seed từ localStorage, fallback mock data để app chạy được khi chưa nối Google Sheets
+  const [customers,setCustomers]=useState([]);
+  const [products,setProducts]=useState([]);
+  const [orders,setOrders]=useState([]);
+  const [debts,setDebts]=useState([]);
+  const [tab,setTab]=useState(()=>{const u=ls("session",null);return u?(u.loai==="seller"?"sell":"shop"):"";});const [allGsUsers,setAllGsUsers]=useState([]);
+  const [loadingAccounts,setLoadingAccounts]=useState(false);const [editOrder,setEditOrder]=useState(null);
+  const allUsers=useMemo(()=>{if(allGsUsers.length>0){const gsIds=new Set(allGsUsers.map(u=>u.id));const nc=customers.filter(c=>!gsIds.has(c.id));return [...allGsUsers,...nc];}return [SELLER,...customers];},[allGsUsers,customers]);
+  useEffect(()=>{if(!api) return;setLoadingAccounts(true);api.get("getTaiKhoan").then(r=>{if(r?.data?.length){setAllGsUsers(r.data);const custs=r.data.filter(u=>u.loai==="customer").map(u=>({...u,avatar:u.avatar||avatarCache.get(u.id)||""}));custs.forEach(u=>{if(u.avatar) avatarCache.set(u.id,u.avatar);});setCustomers(custs);}}).catch(()=>{}).finally(()=>setLoadingAccounts(false));},[api]);
+  useEffect(()=>{if(!api||!user) return;(async()=>{try{const [p,o,d]=await Promise.all([api.get("getSanPham"),api.get("getDonHang"),api.get("getCongNo")]);if(p?.data?.length) setProducts(p.data);if(o?.data?.length) setOrders(o.data);if(d?.data?.length) setDebts(d.data);}catch(e){console.error(e);}})();},[api,user?.id]);
+  // Local mode: lưu thay đổi vào localStorage để không mất khi reload (chỉ khi chưa nối backend)
+  
+  
+  
+  
+  const login=useCallback((u)=>{setUser(u);setTab(u.loai==="seller"?"sell":"shop");},[]);
+  const logout=()=>{setUser(null);setTab("");};
+  const updateUser=(updated)=>{setUser(updated);};
+  const startEditOrder=(order)=>{setEditOrder(order);setTab("sell");};
+  if(!user) return <Login allUsers={allUsers} onLogin={login} onSaveUrl={setScriptUrl} scriptUrl={scriptUrl} loadingAccounts={loadingAccounts}/>;
+  if(user.loai==="seller") return(
+    <div style={{maxWidth:"100%",minHeight:"100vh",fontFamily:font}}>
+      <SellerTabs active={tab} onChange={setTab}/>
+      {tab==="sell"&&<SellTab products={products} customers={customers} setOrders={setOrders} setDebts={setDebts} api={api} editOrder={editOrder} setEditOrder={setEditOrder}/>}
+      {tab==="orders"&&<OrdersTab orders={orders} setOrders={setOrders} debts={debts} setDebts={setDebts} api={api} onEditOrder={startEditOrder} currentUser={user}/>}
+      {tab==="debt"&&<DebtTab customers={customers} debts={debts} setDebts={setDebts} api={api} role="seller" currentUser={user}/>}
+      {tab==="customers"&&<CustomersTab customers={customers} setCustomers={setCustomers} orders={orders} debts={debts} api={api}/>}
+      {tab==="nguon"&&<NguonHangTab orders={orders} products={products} setOrders={setOrders} setDebts={setDebts} api={api} onEditOrder={startEditOrder}/>}
+      {tab==="profile"&&<SellerProfile currentUser={user} onLogout={logout} onUpdateUser={updateUser} orders={orders} debts={debts} customers={customers} scriptUrl={scriptUrl} onSaveUrl={setScriptUrl} api={api}/>}
+    </div>
+  );
+  return(
+    <div style={{maxWidth:"100%",minHeight:"100vh",fontFamily:font}}>
+      {tab==="shop"&&<ShopTab products={products} currentUser={user} setOrders={setOrders} api={api}/>}
+      {tab==="orders"&&<MyOrdersTab orders={orders} currentUser={user}/>}
+      {tab==="debt"&&<DebtTab customers={customers} debts={debts} setDebts={setDebts} api={api} role="customer" currentUser={user}/>}
+      {tab==="profile"&&<CustomerProfile currentUser={user} onLogout={logout} onUpdateUser={updateUser} orders={orders} debts={debts} api={api}/>}
+      <CustomerNav active={tab} onChange={setTab}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
