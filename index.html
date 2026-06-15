@@ -786,7 +786,7 @@ function Login({allUsers,onLogin,onSaveUrl,scriptUrl,loadingAccounts=false}){
         <span style={{color:C.divider}}>|</span>
         <span onClick={()=>setShowGuide(true)} style={{fontSize:12,color:C.blue,cursor:"pointer",fontWeight:700}}>📖 Hướng dẫn</span>
       </div>
-      {showUrl&&<div style={{marginTop:10}}><Inp value={} onChange={setUrl} placeholder="Apps Script URL..."/><div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Để trống = dùng dữ liệu mẫu</div></div>}
+      {showUrl&&<div style={{marginTop:10}}><Inp value={url} onChange={setUrl} placeholder="Apps Script URL..."/><div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Để trống = dùng dữ liệu mẫu</div></div>}
 
     </div>
   </div>);}
