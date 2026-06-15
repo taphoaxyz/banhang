@@ -724,7 +724,7 @@ function GSGuide({onClose}){
 function SellerTabs({active,onChange}){
   const tabs=[{id:"sell",ic:"🛒",lb:"Bán hàng"},{id:"orders",ic:"📋",lb:"Đã giao"},{id:"nguon",ic:"📝",lb:"Đơn tạm"},{id:"debt",ic:"💰",lb:"Công nợ"},{id:"customers",ic:"👥",lb:"KH"},{id:"profile",ic:"👤",lb:"Hồ sơ"}];
   return(
-    <div style={{display:"flex",background:C.card,borderBottom:`2px solid ${C.none}`,position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 8px rgba(21,101,192,0.1)"}}>
+    <div style={{display:"flex",background:C.card,borderBottom:`2px solid ${C.blue}`,position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 8px rgba(21,101,192,0.1)"}}>
       {tabs.map(t=>(
         <button key={t.id} onClick={()=>onChange(t.id)} style={{flex:1,padding:"8px 1px 6px",border:"none",cursor:"pointer",fontFamily:font,background:active===t.id?C.blue:"transparent",color:active===t.id?"white":C.textSec,fontWeight:active===t.id?800:500,transition:"all 0.18s",minWidth:0,overflow:"hidden"}}>
           <div style={{fontSize:15}}>{t.ic}</div>
@@ -1287,7 +1287,7 @@ function SellTab({products,customers,setOrders,setDebts,api,editOrder,setEditOrd
                   style={{width:76,textAlign:"right",padding:"3px 6px",border:`1px solid ${C.border}`,borderRadius:8,fontSize:13,fontWeight:700,color:C.blue,fontFamily:font,outline:"none"}}/>
                 <span style={{color:C.textMuted,fontSize:13}}>×</span>
                 <button onClick={()=>dec(p)} style={{width:26,height:26,borderRadius:"50%",border:"none",background:"#E2E8F0",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</button>
-                {editingQty===`cart_${p.id}`?<input autoFocus inputMode="numeric" defaultValue={cart[p.id]||""} onFocus={e=>e.target.select()} onBlur={e=>{const v=parseInt(e.target.value)||0;setCart(cc=>v>0?{...cc,[p.id]:v}:Object.fromEntries(Object.entries(cc).filter(([k])=>k!==p.id)));setEditingQty(null);}} onKeyDown={e=>{if(e.key==="Enter") e.target.blur();if(e.key==="Escape") setEditingQty(null);}} style={{width:52,textAlign:"center",fontWeight:800,color:C.blue,fontSize:14,border:"none",outline:"none",fontFamily:font,background:"transparent",flexShrink:0}}/>
+                {editingQty===`cart_${p.id}`?<input autoFocus inputMode="numeric" defaultValue={cart[p.id]||""} onFocus={e=>e.target.select()} onBlur={e=>{const v=parseInt(e.target.value)||0;setCart(cc=>v>0?{...cc,[p.id]:v}:Object.fromEntries(Object.entries(cc).filter(([k])=>k!==p.id)));setEditingQty(null);}} onKeyDown={e=>{if(e.key==="Enter") e.target.blur();if(e.key==="Escape") setEditingQty(null);}} style={{width:52,textAlign:"center",fontWeight:800,color:C.blue,fontSize:13,border:"none",outline:"none",fontFamily:font,background:"transparent",flexShrink:0}}/>
                 :<span onClick={()=>setEditingQty(`cart_${p.id}`)} style={{fontWeight:800,color:C.blue,minWidth:40,textAlign:"center",fontSize:14,cursor:"text",flexShrink:0}}>{cart[p.id]}</span>}
                 <button onClick={()=>add(p)} style={{width:26,height:26,borderRadius:"50%",border:"none",background:C.green,color:"white",cursor:"pointer",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</button>
                 <span style={{color:C.textMuted,fontSize:13}}>=</span>
