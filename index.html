@@ -722,9 +722,9 @@ function GSGuide({onClose}){
 
 /* ── SellerTabs ─────────────────────────────────────────────── */
 function SellerTabs({active,onChange}){
-  const tabs=[{id:"sell",ic:"🛒",lb:"Bán"},{id:"orders",ic:"📋",lb:"Đơn"},{id:"debt",ic:"💰",lb:"Nợ"},{id:"customers",ic:"👥",lb:"KH"},{id:"nguon",ic:"📝",lb:"Đơn tạm"},{id:"profile",ic:"👤",lb:"Hồ Sơ"}];
+  const tabs=[{id:"sell",ic:"🛒",lb:"Bán hàng"},{id:"orders",ic:"📋",lb:"Đã giao"},{id:"nguon",ic:"📝",lb:"Đơn tạm"},{id:"debt",ic:"💰",lb:"Công nợ"},{id:"customers",ic:"👥",lb:"KH"},{id:"profile",ic:"👤",lb:"Hồ sơ"}];
   return(
-    <div style={{display:"flex",background:C.card,borderBottom:`2px solid ${C.blue}`,position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 8px rgba(21,101,192,0.1)"}}>
+    <div style={{display:"flex",background:C.card,borderBottom:`2px solid ${C.none}`,position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 8px rgba(21,101,192,0.1)"}}>
       {tabs.map(t=>(
         <button key={t.id} onClick={()=>onChange(t.id)} style={{flex:1,padding:"8px 1px 6px",border:"none",cursor:"pointer",fontFamily:font,background:active===t.id?C.blue:"transparent",color:active===t.id?"white":C.textSec,fontWeight:active===t.id?800:500,transition:"all 0.18s",minWidth:0,overflow:"hidden"}}>
           <div style={{fontSize:15}}>{t.ic}</div>
