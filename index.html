@@ -104,7 +104,7 @@ const fmtDate = (iso) => { if(!iso) return ""; const d=new Date(iso); return `${
 const sameDay = (iso) => new Date(iso).toDateString()===new Date().toDateString();
 
 /* ── Mock Data ─────────────────────────────────────────────── */
-//const SELLER = {id:"U000",username:"seller",password:"seller123",ten:"taphoa.xyz",loai:"seller",sdt:"",diaChi:""};
+const SELLER = {id:"U000",username:"seller",password:"seller123",ten:"taphoa.xyz",loai:"seller",sdt:"",diaChi:""};
 
 /* ── Dọn dẹp localStorage cũ (dữ liệu mẫu) ─────────────────── */
 ['local_customers','local_products','local_orders','local_debts'].forEach(k=>localStorage.removeItem(k));
