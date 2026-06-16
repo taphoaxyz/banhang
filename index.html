@@ -1241,14 +1241,14 @@ function SellTab({products,customers,setOrders,setDebts,api,editOrder,setEditOrd
         </div>
       </div>
       <div style={{background:C.card,borderBottom:`1px solid ${C.divider}`,position:"sticky",top:102,zIndex:20}}>
-        <div style={{padding:"10px 12px 4px",position:"relative"}}>
+        <div style={{padding:"10px 10px 4px",position:"relative"}}>
           <Inp value={search} onChange={setSearch} placeholder="Tìm sản phẩm..." pfx="🔍" style={{paddingRight:search?36:14}}/>
           {search&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:24,top:"50%",transform:"translateY(-50%)",background:"#CBD5E1",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#64748B",fontWeight:700,zIndex:1}}>✕</button>}
         </div>
-        <div style={{padding:"0 12px 8px"}}><Pills options={nhomList} value={nhom} onChange={setNhom}/></div>
+        <div style={{padding:"0 8px 8px"}}><Pills options={nhomList} value={nhom} onChange={setNhom}/></div>
 
       </div>
-      <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:6}}>
         {filtered.map(p=>{const qty=cart[p.id]||0;return(
           <div key={p.id} style={{background:C.card,borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:6,boxShadow:C.shadow}}>
             <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.ten}</div><div style={{display:"flex",alignItems:"center",gap:6,marginTop:1}}>
