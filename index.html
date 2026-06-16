@@ -1740,7 +1740,7 @@ function CustomersTab({customers,setCustomers,orders,debts,api}){
 
 /* ── SHOP TAB ────────────────────────────────────────────────── */
 function ShopTab({products,currentUser,setOrders,api}){
-  const [search,setSearch]=useState("");const [nhom,setNhom]=useState("#");const [cart,setCart]=useState({});const [toast,setToast]=useState("");const [showCart,setShowCart]=useState(false);const [busyOrder,setBusyOrder]=useState(false);
+  const [search,setSearch]=useState("");const [nhom,setNhom]=useState("Tất cả");const [cart,setCart]=useState({});const [toast,setToast]=useState("");const [showCart,setShowCart]=useState(false);const [busyOrder,setBusyOrder]=useState(false);
   const nhomList=["Tất cả",...new Set(products.map(p=>p.nhom).filter(Boolean))];
   const filtered=products.filter(p=>p.ten&&p.ten.trim()&&(nhom==="Tất cả"||p.nhom===nhom)&&(search===""||p.ten.toLowerCase().includes(search.toLowerCase())));
   const cartProds=products.filter(p=>cart[p.id]>0);const total=cartProds.reduce((a,p)=>a+p.gia*(cart[p.id]||0),0);const totalQty=Object.values(cart).reduce((a,b)=>a+b,0);
