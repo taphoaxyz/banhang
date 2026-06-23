@@ -2217,7 +2217,7 @@ const avatarCache={
 
 /* ── APP ─────────────────────────────────────────────────────── */
 function App(){
-  const [scriptUrl,setScriptUrlRaw]=useState(()=>ls("scriptUrl","https://script.google.com/macros/s/AKfycby6YFyxmJ2R0LJWGQ-v0ncviVgr39ymDKwY_OLIQTN60Idw7ddVXm-Qeh1S5raTinIGiw/exec"));
+  const [scriptUrl,setScriptUrlRaw]=useState(()=>ls("scriptUrl","https://script.google.com/macros/s/AKfycbxwMxJvVNGJwxm4kPyp4JYUUWuor5xSkkm3whhSCgi9-gEJ78yAznQOZGza7oe54R-_/exec"));
   const setScriptUrl=(u)=>{setScriptUrlRaw(u);lsSet("scriptUrl",u);};
   const api=useMemo(()=>scriptUrl?createApi(scriptUrl):null,[scriptUrl]);
   const [userRaw,setUserRaw]=useState(()=>ls("session",null));
