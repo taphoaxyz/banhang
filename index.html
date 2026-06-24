@@ -636,7 +636,9 @@ function MoneyInput({value,onChange,placeholder,style:st={}}){
   const display=value?Number(value).toLocaleString("vi-VN"):"";
   return(<div style={{position:"relative",display:"flex",alignItems:"center"}}>
     <span style={{position:"absolute",left:12,color:C.textMuted,fontSize:14,pointerEvents:"none",fontWeight:600}}>₫</span>
-    <input value={display} onChange={e=>onChange(e.target.value.replace(/[^\d]/g,""))} placeholder={placeholder||"0"} inputMode="numeric" style={{width:"100%",padding:"10px 14px 10px 30px",border:`1.5px solid ${C.border}`,borderRadius:10,fontSize:14,outline:"none",background:"white",color:C.text,fontFamily:font,boxSizing:"border-box",fontWeight:700,...st}}/>
+    <input value={display} onChange={e=>onChange(e.target.value.replace(/[^\d]/g,""))}
+      onBlur={e=>{if(!e.target.value.trim()) onChange("0");}}
+      placeholder={placeholder||"0"} inputMode="numeric" style={{width:"100%",padding:"10px 14px 10px 30px",border:`1.5px solid ${C.border}`,borderRadius:10,fontSize:14,outline:"none",background:"white",color:C.text,fontFamily:font,boxSizing:"border-box",fontWeight:700,...st}}/>
   </div>);}
 function Modal({onClose,children,fullBottom=false}){
   if(fullBottom)return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={onClose}><div style={{background:C.card,width:"100%",maxWidth:430,margin:"0 auto",borderRadius:"20px 20px 0 0",padding:20,maxHeight:"90vh",overflowY:"auto",animation:"slideUp 0.25s ease"}} onClick={e=>e.stopPropagation()}>{children}</div></div>);
@@ -765,9 +767,9 @@ function GSGuide({onClose}){
 function SellerTabs({active,onChange}){
   const tabs=[{id:"sell",ic:"🛒",lb:"Bán hàng"},{id:"orders",ic:"📋",lb:"Đã giao"},{id:"nguon",ic:"📝",lb:"Đơn tạm"},{id:"debt",ic:"💰",lb:"Công nợ"},{id:"customers",ic:"👥",lb:"KH"},{id:"profile",ic:"👤",lb:"Hồ sơ"}];
   return(
-    <div style={{display:"flex",background:C.card,borderBottom:`2px solid ${C.blue}`,position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 8px rgba(21,101,192,0.1)"}}>
+    <div style={{display:"flex",alignItems:"center",height:48,background:C.card,borderBottom:`1px solid ${C.blueLight}`,position:"sticky",top:0,zIndex:50}}>
       {tabs.map(t=>(
-        <button key={t.id} onClick={()=>onChange(t.id)} style={{flex:1,padding:"8px 1px 6px",border:"none",cursor:"pointer",fontFamily:font,background:"transparent",color:active===t.id?C.blue:C.textSec,fontWeight:active===t.id?800:500,transition:"all 0.18s",minWidth:0,overflow:"hidden"}}>
+        <button key={t.id} onClick={()=>onChange(t.id)} style={{flex:1,height:"100%",padding:"4px 1px",border:"none",cursor:"pointer",fontFamily:font,background:"transparent",color:active===t.id?C.blue:C.textSec,fontWeight:active===t.id?800:500,transition:"all 0.18s",minWidth:0,overflow:"hidden",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
           <div style={{fontSize:15}}>{t.ic}</div>
           <div style={{fontSize:8,marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.lb}</div>
         </button>
@@ -1115,11 +1117,12 @@ function NguonHangTab({orders,products,setOrders,setDebts,api,onEditOrder}){
       {/* Danh sách đơn */}
       <div style={{padding:"8px 12px",display:"flex",flexDirection:"column",gap:8}}>
         {pendingOrders.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted}}><div style={{fontSize:40}}>📭</div><div style={{fontWeight:600,marginTop:8}}>Không có đơn tạm</div></div>}
-        {pendingOrders.map(o=>(
+        {pendingOrders.map((o,i)=>(
           <Card key={o.id} onClick={()=>setSel(o)} style={{padding:"12px 14px",border:`1.5px solid ${C.border}`,background:"white",borderLeft:`4px solid ${C.amber}`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                  <span style={{fontSize:10,color:C.textMuted,fontWeight:600}}>#{i+1}</span>
                   <span style={{fontWeight:800,fontSize:12,color:C.orange}}>{o.id}</span>
                   <Badge label="⏳ Chờ" color={C.orange} bg={C.orangeLight} size={10}/>
                 </div>
@@ -1128,7 +1131,7 @@ function NguonHangTab({orders,products,setOrders,setDebts,api,onEditOrder}){
               </div>
               <div style={{textAlign:"right"}}>
                 <div style={{fontWeight:900,fontSize:16,color:C.orange}}>{fmt(o.tongTien)}</div>
-                <Btn onClick={e=>{e.stopPropagation();approve(o.id);}} color={C.green} sm disabled={busyApprove} style={{marginTop:4}}>{busyApprove?"...":"✅ Duyệt"}</Btn>
+                <Btn onClick={e=>{e.stopPropagation();approve(o.id);}} color={C.green} sm disabled={busyApprove} style={{marginTop:4,background:C.greenLight,color:C.green,border:"none"}}>{busyApprove?"...":"✅ Duyệt"}</Btn>
               </div>
             </div>
             <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
@@ -1183,7 +1186,7 @@ function NguonHangTab({orders,products,setOrders,setDebts,api,onEditOrder}){
               }
               onEditOrder(orderToEdit);setSel(null);
             }} color={C.blue} style={{flex:1}}>✏️ Sửa</Btn>
-            <Btn sm onClick={()=>approve(sel.id)} color={C.green} style={{flex:1}} disabled={busyApprove}>{busyApprove?"⏳":"✅ Duyệt"}</Btn>
+            <Btn sm onClick={()=>approve(sel.id)} color={C.green} style={{flex:1,background:C.greenLight,color:C.green,border:"none"}} disabled={busyApprove}>{busyApprove?"⏳":"✅ Duyệt"}</Btn>
             <Btn sm onClick={()=>{printOrder(sel);setSel(null);}} outline color={C.blue} style={{flex:1}}>🖨️ In</Btn>
             <Btn sm onClick={async()=>{if(!window.confirm("Xoá đơn "+sel.id+"?")) return;
               const isDone=sel.trangThai==="done";
@@ -1219,10 +1222,15 @@ function SellTab({products,setProducts,customers,setOrders,setDebts,api,editOrde
   const [cartGia,setCartGia]=useState({});
   const [editingPrice,setEditingPrice]=useState(null); // `${p.id}_gia` hoặc `${p.id}_von`
   const [isDesktop,setIsDesktop]=useState(()=>typeof window!=="undefined"&&window.innerWidth>=1024);
+  const headerRef=useRef(null);
+  const [headerH,setHeaderH]=useState(180);
   useEffect(()=>{
-    const onResize=()=>setIsDesktop(window.innerWidth>=1024);
+    const measure=()=>{if(headerRef.current) setHeaderH(headerRef.current.offsetHeight);};
+    measure();
+    const onResize=()=>{setIsDesktop(window.innerWidth>=1024);measure();};
     window.addEventListener("resize",onResize);
-    return ()=>window.removeEventListener("resize",onResize);
+    const t=setTimeout(measure,50); // đo lại sau khi font/ảnh load xong
+    return ()=>{window.removeEventListener("resize",onResize);clearTimeout(t);};
   },[]);
   const savePrice=async(p,field,val)=>{
     const num=Math.max(0,parseInt(String(val).replace(/[^0-9]/g,""))||0);
@@ -1338,6 +1346,7 @@ function SellTab({products,setProducts,customers,setOrders,setDebts,api,editOrde
                 value={cartGia[p.id]!==undefined?cartGia[p.id]:p.gia}
                 onChange={e=>setCartGia(g=>({...g,[p.id]:e.target.value}))}
                 onFocus={e=>e.target.select()}
+                onBlur={e=>{const v=Math.max(0,parseFloat(e.target.value)||0);setCartGia(g=>({...g,[p.id]:v}));}}
                 style={{width:64,textAlign:"right",padding:"3px 2px",border:"none",borderRadius:0,fontSize:12,fontWeight:700,color:C.blue,fontFamily:font,outline:"none",background:"transparent"}}/>
               <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:3}}>
                 <button onClick={()=>dec(p)} style={{width:24,height:24,borderRadius:"50%",border:"none",background:"#E2E8F0",cursor:"pointer",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</button>
@@ -1372,7 +1381,7 @@ function SellTab({products,setProducts,customers,setOrders,setDebts,api,editOrde
   return(
     <div style={{background:C.bg,minHeight:"100vh",paddingBottom:80,fontFamily:font}}>
       {/* Sticky pinned header + search + pills — gộp 1 khối để khoảng hở không co giãn khi cuộn */}
-      <div style={{position:"sticky",top:48,zIndex:50}}>
+      <div ref={headerRef} style={{position:"sticky",top:48,zIndex:50}}>
         <div style={{background:`linear-gradient(135deg,${C.blue},${C.teal})`,padding:"10px 12px",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
         {/* Row 1: Khách + Ngày giờ + Cart */}
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -1399,7 +1408,7 @@ function SellTab({products,setProducts,customers,setOrders,setDebts,api,editOrde
         {filtered.map(p=>{const qty=cart[p.id]||0;return(
           <div key={p.id} style={{background:C.card,borderRadius:14,padding:"10px 14px",display:"flex",alignItems:"center",gap:6,boxShadow:C.shadow}}>
             <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.ten}</div><div style={{display:"flex",alignItems:"center",gap:4,marginTop:1}}>
-                {p.von>0&&<>
+                {p.von!==undefined&&p.von!==null&&<>
                   {editingPrice===`${p.id}_von`
                     ?<input autoFocus inputMode="numeric" defaultValue={p.von} onFocus={e=>e.target.select()} onBlur={e=>savePrice(p,"von",e.target.value)} onKeyDown={e=>e.key==="Enter"&&e.target.blur()} onClick={e=>e.stopPropagation()} style={{width:38,flexShrink:0,fontSize:11,color:C.textMuted,border:"none",outline:"none",fontFamily:font,background:"transparent",padding:0}}/>
                     :<span onClick={e=>{e.stopPropagation();setEditingPrice(`${p.id}_von`);}} style={{fontSize:11,color:C.textMuted,cursor:"text",width:38,flexShrink:0,display:"inline-block",overflow:"hidden",whiteSpace:"nowrap"}}>{fmt(p.von)}</span>}
@@ -1422,7 +1431,7 @@ function SellTab({products,setProducts,customers,setOrders,setDebts,api,editOrde
         {filtered.length===0&&<div style={{textAlign:"center",padding:40,color:C.textMuted}}><div style={{fontSize:40}}>🔍</div><div style={{fontWeight:600,marginTop:8}}>Không tìm thấy sản phẩm</div></div>}
       </div>
       {isDesktop&&(
-        <div style={{position:"fixed",top:208,left:"calc(50vw + 8px)",right:12,background:C.card,borderRadius:16,padding:16,boxShadow:C.shadow,maxHeight:"calc(100vh - 220px)",display:"flex",flexDirection:"column",zIndex:55}}>
+        <div style={{position:"fixed",top:48+headerH+8,left:"calc(50vw + 8px)",right:12,background:C.card,borderRadius:16,padding:16,boxShadow:C.shadow,maxHeight:`calc(100vh - ${48+headerH+20}px)`,display:"flex",flexDirection:"column",zIndex:55}}>
           <div style={{fontWeight:800,fontSize:15,color:C.blue,marginBottom:10,display:"flex",alignItems:"center",gap:6,flexShrink:0}}>🛒 Giỏ hàng {totalQty>0&&<span style={{fontSize:11,background:C.blueLight,color:C.blue,borderRadius:10,padding:"2px 8px"}}>{totalQty} sp</span>}</div>
           <div style={{flex:1,minHeight:0,overflowY:"auto"}}>
             {cartProds.length===0
